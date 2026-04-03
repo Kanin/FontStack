@@ -1,0 +1,107 @@
+[project]
+name = "fontstack"
+dynamic = ["version"]
+description = "Unicode text rendering with automatic per-character font fallback, BiDi support, and emoji"
+readme = "README.md"
+authors = [{ name = "Kanin", email = "im@kanin.dev" }]
+license = { text = "MIT" } 
+requires-python = ">=3.11"
+keywords = [
+    "font",
+    "text",
+    "rendering",
+    "fallback",
+    "unicode",
+    "bidi",
+    "arabic",
+    "emoji",
+    "pillow",
+    "typography",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Text Processing",
+    "Typing :: Typed",
+]
+dependencies = [
+    "arabic-reshaper>=3.0.0",
+    "fonttools>=4.62.1",
+    "pillow>=12.2.0",
+    "pilmoji>=2.0.5",
+    "python-bidi>=0.6.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/Kanin/fontstack"
+Repository = "https://github.com/Kanin/fontstack"
+Issues = "https://github.com/Kanin/fontstack/issues"
+Changelog = "https://github.com/Kanin/fontstack/blob/main/CHANGELOG.md"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/fontstack/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fontstack"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/",
+    "tests/*.py",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.15.9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+src = ["src"]
+target-version = "py311"
+fix = true
+
+[tool.ruff.lint]
+ignore = [
+    "F403",  # 'from module import *' used; unable to detect undefined names
+    "F405",  # Name may be undefined, or defined from star imports: module
+]
+extend-select = [
+    "I",  # Import order
+    "B",  # Bugbear
+    "UP",  # Upgrade deprecated
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["fontstack"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pyright]
+pythonVersion = "3.13"
+
+typeCheckingMode = "basic"
+useLibraryCodeForTypes = true
+
+reportMissingImports = true
+# reportMissingTypeStubs = true
+reportUnnecessaryTypeIgnoreComment = true
