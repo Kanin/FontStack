@@ -30,21 +30,21 @@ Pillow's built-in text rendering uses a single font, so any character not covere
 
 <table>
 <tr>
-<td align="center"><img src="https://raw.githubusercontent.com/Kanin/fontstack/main/examples/11_multilingual/output.png" alt="Nine languages" width="240"/><br/><em>Nine languages, one stack</em></td>
-<td align="center"><img src="https://raw.githubusercontent.com/Kanin/fontstack/main/examples/09_cjk/output.png" alt="CJK fallback" width="420"/><br/><em>Chinese · Japanese · Korean</em></td>
+<td align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/master/examples/11_multilingual/output.png" alt="Nine languages" width="240"/><br/><em>Nine languages, one stack</em></td>
+<td align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/master/examples/09_cjk/output.png" alt="CJK fallback" width="420"/><br/><em>Chinese · Japanese · Korean</em></td>
 </tr>
 <tr>
-<td align="center"><img src="https://raw.githubusercontent.com/Kanin/fontstack/main/examples/10_scripts/output.png" alt="Indic and RTL scripts" width="420"/><br/><em>Devanagari · Hebrew · Bengali · Thai</em></td>
-<td align="center"><img src="https://raw.githubusercontent.com/Kanin/fontstack/main/examples/02_weights/output.png" alt="Variable font weights" width="420"/><br/><em>Variable font weight axis (wght 100–900)</em></td>
+<td align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/master/examples/10_scripts/output.png" alt="Indic and RTL scripts" width="420"/><br/><em>Devanagari · Hebrew · Bengali · Thai</em></td>
+<td align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/master/examples/02_weights/output.png" alt="Variable font weights" width="420"/><br/><em>Variable font weight axis (wght 100–900)</em></td>
 </tr>
 <tr>
-<td colspan="2" align="center"><img src="https://raw.githubusercontent.com/Kanin/fontstack/main/examples/07_mixed/output.png" alt="Mixed Arabic and Latin"/><br/><em>Mixed Arabic + Latin - BiDi reordering applied automatically</em></td>
+<td colspan="2" align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/master/examples/07_mixed/output.png" alt="Mixed Arabic and Latin"/><br/><em>Mixed Arabic + Latin - BiDi reordering applied automatically</em></td>
 </tr>
 <tr>
-<td colspan="2" align="center"><img src="https://raw.githubusercontent.com/Kanin/fontstack/main/examples/12_symbols/output.png" alt="Unicode symbols and fancy text"/><br/><em>Symbols · Math alphanumerics · Box drawing · Arrows</em></td>
+<td colspan="2" align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/master/examples/12_symbols/output.png" alt="Unicode symbols and fancy text"/><br/><em>Symbols · Math alphanumerics · Box drawing · Arrows</em></td>
 </tr>
 <tr>
-<td colspan="2" align="center"><img src="https://raw.githubusercontent.com/Kanin/fontstack/main/examples/13_fit_mode/output.png" alt="Fit mode - wrap, shrink, truncate"/><br/><em>Fit mode - wrap → shrink → truncate, all four strips share the same bounding box</em></td>
+<td colspan="2" align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/master/examples/13_fit_mode/output.png" alt="Fit mode - wrap, shrink, truncate"/><br/><em>Fit mode - wrap → shrink → truncate, all four strips share the same bounding box</em></td>
 </tr>
 </table>
 
