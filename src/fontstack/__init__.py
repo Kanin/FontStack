@@ -1,6 +1,6 @@
 """FontStack - Unicode text rendering with automatic per-character font fallback."""
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 from fontstack._core import (
     FillType,
