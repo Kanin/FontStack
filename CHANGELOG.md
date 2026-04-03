@@ -5,11 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-04-03
+
+### Added
+
+- ReadTheDocs configuration (`.readthedocs.yaml`) with Sphinx and `sphinx-rtd-theme`.
+- Sphinx documentation directory (`docs/`) with `conf.py`, `index.rst`, and `requirements.txt`.
+
+---
+
 ## [0.1.2] - 2026-04-03
 
 ### Fixed
 
-- README gallery images now load correctly on PyPI and GitHub — URLs updated to use the correct branch path.
+- README gallery images now load correctly on PyPI and GitHub; URLs updated to use the correct branch path.
 
 ### Changed
 
@@ -51,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Switched from Pillow's RAQM layout engine to the BASIC layout engine for font loading. BASIC produces consistent glyph advance widths across all platforms and doesn't require the optional `libraqm` system library.
 
+[0.1.3]: https://github.com/Kanin/fontstack/releases/tag/v0.1.3
 [0.1.2]: https://github.com/Kanin/fontstack/releases/tag/v0.1.2
 [0.1.1]: https://github.com/Kanin/fontstack/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Kanin/fontstack/releases/tag/v0.1.0
