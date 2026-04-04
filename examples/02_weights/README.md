@@ -34,7 +34,7 @@ renders at the same weight cost nothing.
   `weight="Bold"` are also accepted for static fonts that use named instances.
 
 - **Shared `FontManager`** - instantiating the manager once and passing it to
-  every `render_text()` call means each `(stack_hash, size, weight)` triple is
+  every `draw_text()` call means each `(stack_hash, size, weight)` triple is
   loaded once and reused.  The internal LRU cache has a configurable cap
   (default 30 entries).
 

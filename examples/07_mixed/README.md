@@ -14,7 +14,7 @@ the Arabic greeting is drawn by NotoSansArabic.
 
 ## Why it's here
 
-This is the core value proposition of a font stack.  A single `render_text()`
+This is the core value proposition of a font stack.  A single `draw_text()`
 call handles a string whose characters span multiple scripts and Unicode blocks.
 FontStack walks the stack for each character, picks the first font whose `cmap`
 contains that codepoint, groups consecutive same-font characters into runs, and

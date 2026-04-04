@@ -1,11 +1,6 @@
 # FontStack Examples
 
-Each example is a standalone script that generates an `output.png`. Run any of them from the project root after installing FontStack.
-
-```bash
-pip install fontstack
-python examples/01_basic/example.py
-```
+Each example is a standalone script that generates an `output.png`.
 
 ---
 
@@ -13,7 +8,7 @@ python examples/01_basic/example.py
 
 | # | Example | What it shows | Output |
 |---|---------|---------------|--------|
-| 01 | [Basic single-line rendering](01_basic/) | `render_text()` with one font and padding | ![](01_basic/output.png) |
+| 01 | [Basic single-line rendering](01_basic/) | `draw_text()` with one font and padding | ![](01_basic/output.png) |
 | 02 | [Variable font weight spectrum](02_weights/) | `weight=100` through `weight=900` from one font file | ![](02_weights/output.png) |
 | 03 | [Word-wrap at a fixed max width](03_wrap/) | `mode="wrap"` and `line_spacing` | ![](03_wrap/output.png) |
 | 04 | [Scale to fit a fixed width](04_scale_to_fit/) | `mode="scale"` and `min_size` | ![](04_scale_to_fit/output.png) |

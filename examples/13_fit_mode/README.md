@@ -57,7 +57,7 @@ the box, looks as large as possible, and fails gracefully when it truly can't fi
 - **Caching across shrink steps** - `get_font_chain()` is LRU-cached on
   `(stack_hash, size, weight)`.  The shrink loop calls `_resolve_context()` once
   per size step, but each unique size is only loaded once.  On repeated calls
-  to `draw_text_smart()` with the same settings, the entire loop is essentially
+  to `draw()` with the same settings, the entire loop is essentially
   free after the first run.
 
 - **`min_size=12` is deliberate** - strip 4 demonstrates truncation, which only

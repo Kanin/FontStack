@@ -12,8 +12,6 @@ manager = FontManager(
     default_stack=[FontConfig(path=str(FONTS / "NotoSans[wdth,wght].ttf"))]
 )
 
-# region Layout constants - shared by every strip
-
 BOX_W = 540  # strip canvas width
 BOX_H = 110  # strip canvas height
 PAD_X = 20  # horizontal padding (left & right)
@@ -48,14 +46,10 @@ texts = [
     ),
 ]
 
-# endregion
-
-# region Render
-
 strips = []
 for text, bg in zip(texts, BG_COLORS, strict=True):
     strip = Image.new("RGBA", (BOX_W, BOX_H), bg)
-    manager.draw_text_smart(
+    manager.draw(
         image=strip,
         text=text,
         position=(PAD_X, PAD_Y),
@@ -68,10 +62,6 @@ for text, bg in zip(texts, BG_COLORS, strict=True):
     )
     strips.append(strip)
 
-# endregion
-
-# region Assemble and save
-
 H = BOX_H * len(strips) + GAP * (len(strips) - 1)
 canvas = Image.new("RGBA", (BOX_W, H), (200, 200, 205, 255))
 y = 0
@@ -79,7 +69,5 @@ for strip in strips:
     canvas.paste(strip, (0, y))
     y += BOX_H + GAP
 
-out = Path(__file__).parent / "output.png"
-canvas.convert("RGB").save(out)
-print(f"Saved {BOX_W}×{H} px → {out}")
-# endregion
+canvas.convert("RGB").save(Path(__file__).parent / "output.png")
+print(f"Saved {BOX_W}x{H} px")

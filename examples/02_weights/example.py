@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from fontstack import FontConfig, FontManager, render_text
+from fontstack import FontConfig, FontManager, draw_text
 
 FONTS = Path(__file__).parent.parent.parent / "tests" / "fonts"
 
@@ -14,7 +14,7 @@ manager = FontManager(
 
 rows = []
 for weight in [100, 200, 300, 400, 500, 600, 700, 800, 900]:
-    row = render_text(
+    row = draw_text(
         f"wght {weight}  The quick brown fox jumps over the lazy dog",
         font_stack=[],
         manager=manager,

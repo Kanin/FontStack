@@ -3,6 +3,15 @@ revision = 3
 requires-python = ">=3.11"
 
 [[package]]
+name = "arabic-reshaper"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/27/9f488e21f87fd8b7ff3b52c372b9510c619ecf1398e4ba30d5f4becc7d86/arabic_reshaper-3.0.0.tar.gz", hash = "sha256:ffcd13ba5ec007db71c072f5b23f420da92ac7f268512065d49e790e62237099", size = 23420, upload-time = "2023-01-10T14:40:00.423Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/44/fb/e20b45d81d74d810b01bff408baf8af04abf1d55a1a289c8395ad0919a7c/arabic_reshaper-3.0.0-py3-none-any.whl", hash = "sha256:3f71d5034bb694204a239a6f1ebcf323ac3c5b059de02259235e2016a1a5e2dc", size = 20364, upload-time = "2023-01-10T14:39:58.69Z" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -24,6 +33,7 @@ wheels = [
 name = "fontstack"
 source = { editable = "." }
 dependencies = [
+    { name = "arabic-reshaper" },
     { name = "fonttools" },
     { name = "pillow" },
     { name = "pilmoji" },
@@ -38,6 +48,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "arabic-reshaper", specifier = ">=3.0.0" },
     { name = "fonttools", specifier = ">=4.62.1" },
     { name = "pillow", specifier = ">=12.2.0" },
     { name = "pilmoji", specifier = ">=2.0.5" },

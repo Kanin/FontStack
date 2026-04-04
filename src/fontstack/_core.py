@@ -9,7 +9,7 @@ Typical usage
 -------------
 ::
 
-    from fontstack import FontManager, FontConfig, render_text
+    from fontstack import FontManager, FontConfig, draw_text
     from PIL import Image
 
     # --- Using FontManager directly (full control) ---
@@ -22,7 +22,7 @@ Typical usage
     )
 
     img = Image.new("RGBA", (800, 200), "white")
-    w, h = manager.draw_text_smart(
+    w, h = manager.draw(
         image=img,
         text="Hello 世界 مرحبا 🌍",
         position=(50, 80),
@@ -33,8 +33,8 @@ Typical usage
         fill=(30, 30, 30),
     )
 
-    # --- Using render_text (zero-setup convenience) ---
-    img2 = render_text(
+    # --- Using draw_text (zero-setup convenience) ---
+    img2 = draw_text(
         text="Hello 世界 مرحبا 🌍",
         font_stack=[
             FontConfig(path="fonts/NotoSans.ttf"),
@@ -47,10 +47,10 @@ Typical usage
     )
     img2.save("output.png")
 
-    # --- Reusing a manager across many render_text calls (avoids re-parsing cmaps) ---
+    # --- Reusing a manager across many draw_text calls (avoids re-parsing cmaps) ---
     manager = FontManager(default_stack=[FontConfig(path="fonts/NotoSans.ttf")])
     for label in labels:
-        img = render_text(label, manager=manager, size=32)
+        img = draw_text(label, manager=manager, size=32)
 """
 
 from __future__ import annotations
@@ -171,7 +171,7 @@ class _RenderContext(NamedTuple):
     """
     Immutable bundle of resolved rendering inputs shared across one draw call.
 
-    Created once per :meth:`FontManager.draw_text_smart` invocation (and once
+    Created once per :meth:`FontManager.draw` invocation (and once
     per size step in ``"scale"``/``"fit"`` modes) by
     :meth:`FontManager._resolve_context`, then threaded through every internal
     helper so that ``get_font_chain`` and its expensive ``_stack_hash`` are
@@ -346,7 +346,7 @@ class FontManager:
             ]
         )
         img = Image.new("RGBA", (800, 100), "white")
-        manager.draw_text_smart(img, "Hello مرحبا 世界", position=(10, 20), size=40)
+        manager.draw(img, "Hello مرحبا 世界", position=(10, 20), size=40)
     """
 
     def __init__(
@@ -538,7 +538,7 @@ class FontManager:
         the primary font regardless of which font actually contains the glyph,
         because Pilmoji renders them independently and tying them to a fallback
         font would corrupt the baseline offset calculation in
-        :meth:`draw_text_smart`.
+        :meth:`draw`.
 
         For all other characters the stack is walked in order and the first
         font whose cmap contains the codepoint is returned. The primary font
@@ -703,7 +703,7 @@ class FontManager:
     # never changes; text is simply broken across lines at whitespace.
     # Exposing ``min_size`` here would be misleading, as it has no effect.
     @overload
-    def draw_text_smart(
+    def draw(
         self,
         image: Image.Image,
         text: str,
@@ -727,7 +727,7 @@ class FontManager:
     # and IDEs surface ``min_size`` in autocomplete only when the caller
     # explicitly writes ``mode="scale"``.
     @overload
-    def draw_text_smart(
+    def draw(
         self,
         image: Image.Image,
         text: str,
@@ -753,7 +753,7 @@ class FontManager:
     # *min_size* is not enough.  Both parameters are surfaced by type checkers
     # only when the caller explicitly writes ``mode="fit"``.
     @overload
-    def draw_text_smart(
+    def draw(
         self,
         image: Image.Image,
         text: str,
@@ -780,7 +780,7 @@ class FontManager:
     # without ambiguity. This overload is never chosen when the caller passes a
     # string literal; overloads 1–3 take priority.
     @overload
-    def draw_text_smart(
+    def draw(
         self,
         image: Image.Image,
         text: str,
@@ -799,7 +799,7 @@ class FontManager:
         emoji_source: type[BaseSource] = ...,
     ) -> tuple[int, int]: ...
 
-    def draw_text_smart(
+    def draw(
         self,
         image: Image.Image,
         text: str,
@@ -1123,8 +1123,8 @@ class FontManager:
 # ---------------------------------------------------------------------------
 
 
-# render_text overloads
-# ---------------------
+# draw_text overloads
+# --------------------
 # Two orthogonal dimensions produce 8 signatures:
 #
 #   font_stack dimension
@@ -1145,7 +1145,7 @@ class FontManager:
 
 # Overload 1/8 – font_stack required, mode="wrap"
 @overload
-def render_text(
+def draw_text(
     text: str,
     font_stack: list[FontConfig],
     *,
@@ -1165,7 +1165,7 @@ def render_text(
 
 # Overload 2/8 – font_stack required, mode="scale"
 @overload
-def render_text(
+def draw_text(
     text: str,
     font_stack: list[FontConfig],
     *,
@@ -1186,7 +1186,7 @@ def render_text(
 
 # Overload 3/8 – font_stack required, mode="fit"
 @overload
-def render_text(
+def draw_text(
     text: str,
     font_stack: list[FontConfig],
     *,
@@ -1209,7 +1209,7 @@ def render_text(
 # Overload 4/8 – font_stack required, generic RenderMode fallback
 # Catches calls where ``mode`` is a runtime ``RenderMode`` union value.
 @overload
-def render_text(
+def draw_text(
     text: str,
     font_stack: list[FontConfig],
     *,
@@ -1234,7 +1234,7 @@ def render_text(
 
 # Overload 5/8 – manager required, mode="wrap"
 @overload
-def render_text(
+def draw_text(
     text: str,
     font_stack: list[FontConfig] | None = ...,
     *,
@@ -1254,7 +1254,7 @@ def render_text(
 
 # Overload 6/8 – manager required, mode="scale"
 @overload
-def render_text(
+def draw_text(
     text: str,
     font_stack: list[FontConfig] | None = ...,
     *,
@@ -1275,7 +1275,7 @@ def render_text(
 
 # Overload 7/8 – manager required, mode="fit"
 @overload
-def render_text(
+def draw_text(
     text: str,
     font_stack: list[FontConfig] | None = ...,
     *,
@@ -1297,7 +1297,7 @@ def render_text(
 
 # Overload 8/8 – manager required, generic RenderMode fallback
 @overload
-def render_text(
+def draw_text(
     text: str,
     font_stack: list[FontConfig] | None = ...,
     *,
@@ -1317,7 +1317,7 @@ def render_text(
 ) -> Image.Image: ...
 
 
-def render_text(
+def draw_text(
     text: str,
     font_stack: list[FontConfig] | None = None,
     *,
@@ -1346,7 +1346,7 @@ def render_text(
     efficient for batch rendering::
 
         mgr = FontManager(default_stack=[FontConfig(path="fonts/NotoSans.ttf")])
-        images = [render_text(label, manager=mgr) for label in labels]
+        images = [draw_text(label, manager=mgr) for label in labels]
 
     Parameters
     ----------
@@ -1416,7 +1416,7 @@ def render_text(
     -------
     ::
 
-        img = render_text(
+        img = draw_text(
             "Hello مرحبا 世界 🌍",
             font_stack=[
                 FontConfig(path="fonts/NotoSans.ttf"),
@@ -1470,7 +1470,7 @@ def render_text(
     )
     canvas = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
 
-    manager.draw_text_smart(
+    manager.draw(
         image=canvas,
         text=text,
         position=(0, size),

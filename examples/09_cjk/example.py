@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from fontstack import FontConfig, FontManager, render_text
+from fontstack import FontConfig, FontManager, draw_text
 
 FONTS = Path(__file__).parent.parent.parent / "tests" / "fonts"
 
@@ -26,7 +26,7 @@ ROWS = [
 BG = (250, 250, 250)
 rows = []
 for label, text in ROWS:
-    img = render_text(
+    img = draw_text(
         f"{label}  {text}",
         font_stack=[],
         manager=manager,

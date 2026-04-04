@@ -26,7 +26,7 @@ GAP = 6
 strips = []
 for text in texts:
     strip = Image.new("RGBA", (CANVAS_W, STRIP_H), (248, 248, 255, 255))
-    manager.draw_text_smart(
+    manager.draw(
         image=strip,
         text=text,
         position=(PAD_X, 20),

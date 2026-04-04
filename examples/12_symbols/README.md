@@ -49,6 +49,6 @@ handles specialized symbol coverage across multiple fonts and Unicode planes.
   controls which variant is used when coverage overlaps.
 
 - **Label vs content sizes** - this example renders each section as two separate
-  `render_text()` images (label at 18 pt, content at 36 pt) and assembles them
+  `draw_text()` images (label at 18 pt, content at 36 pt) and assembles them
   manually.  This pattern is useful when you need different sizes within the same
   visual section.

@@ -1,12 +1,12 @@
-"""01_basic - single-line render via render_text().  See README.md."""
+"""01_basic - single-line render via draw_text().  See README.md."""
 
 from pathlib import Path
 
-from fontstack import FontConfig, render_text
+from fontstack import FontConfig, draw_text
 
 FONTS = Path(__file__).parent.parent.parent / "tests" / "fonts"
 
-img = render_text(
+img = draw_text(
     "Hello, world!",
     font_stack=[FontConfig(path=str(FONTS / "NotoSans[wdth,wght].ttf"))],
     size=72,

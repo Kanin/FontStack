@@ -13,7 +13,7 @@ and saves it to `output.png`.
 
 ## Why it's here
 
-Without `mode="wrap"`, `render_text()` draws everything on a single line.
+Without `mode="wrap"`, `draw_text()` draws everything on a single line.
 Setting `mode="wrap"` and `max_width` tells FontStack to split the text
 greedily at word boundaries - equivalent to CSS `word-wrap: break-word` - so
 any paragraph-length content stays within its container.

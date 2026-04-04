@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from fontstack import FontConfig, FontManager, render_text
+from fontstack import FontConfig, FontManager, draw_text
 
 FONTS = Path(__file__).parent.parent.parent / "tests" / "fonts"
 
@@ -38,7 +38,7 @@ SECTION_GAP = 12
 
 rendered = []
 for label, content in SECTIONS:
-    label_img = render_text(
+    label_img = draw_text(
         label,
         font_stack=[],
         manager=manager,
@@ -47,7 +47,7 @@ for label, content in SECTIONS:
         background=BG,
         padding=0,
     )
-    content_img = render_text(
+    content_img = draw_text(
         content,
         font_stack=[],
         manager=manager,
@@ -73,6 +73,5 @@ for li, ci in rendered:
     canvas.paste(ci, (MARGIN_X, y))
     y += ci.height + SECTION_GAP
 
-out = Path(__file__).parent / "output.png"
-canvas.save(out)
-print(f"Saved {canvas.width}×{canvas.height} → {out}")
+canvas.save(Path(__file__).parent / "output.png")
+print(f"Saved {canvas.width}x{canvas.height} px")

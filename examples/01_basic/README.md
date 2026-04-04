@@ -1,7 +1,7 @@
 # Example 01 - Basic single-line rendering
 
 The simplest possible FontStack usage: render one line of text to a PNG with
-`render_text()`.
+`draw_text()`.
 
 ![Output](output.png)
 
@@ -12,8 +12,8 @@ of padding and saves the result to `output.png`.
 
 ## Why it's here
 
-`render_text()` is FontStack's zero-configuration entry point.  It wraps
-`FontManager.draw_text_smart()` in a single call that handles canvas creation,
+`draw_text()` is FontStack's zero-configuration entry point.  It wraps
+`FontManager.draw()` in a single call that handles canvas creation,
 padding, and image assembly - you supply text and a font, and you get a
 ready-to-save `PIL.Image` back.  This is the right starting point before
 exploring wrap, fit, or fallback features.
@@ -34,7 +34,7 @@ exploring wrap, fit, or fallback features.
   minimum it needs a `path`.  Variable fonts pick up axis defaults
   automatically; weights and custom axes can be set via `axes=VariationAxes(…)`.
 
-- **`render_text()` vs `draw_text_smart()`** - `render_text()` creates a new
+- **`draw_text()` vs `draw()`** - `draw_text()` creates a new
   `Image` each call, which is convenient for one-shot renders.  When building
-  composite layouts, use `FontManager.draw_text_smart()` directly to paint onto
+  composite layouts, use `FontManager.draw()` directly to paint onto
   an existing image at a specific position.

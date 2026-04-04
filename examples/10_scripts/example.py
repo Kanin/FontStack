@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from fontstack import FontConfig, FontManager, render_text
+from fontstack import FontConfig, FontManager, draw_text
 
 FONTS = Path(__file__).parent.parent.parent / "tests" / "fonts"
 
@@ -36,7 +36,7 @@ PAD = 20
 
 strips = []
 for (label, text), bg in zip(ROWS, BG_COLORS, strict=True):
-    row = render_text(
+    row = draw_text(
         f"{label}:  {text}",
         font_stack=[],
         manager=manager,

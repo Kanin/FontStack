@@ -33,8 +33,8 @@ unambiguous.
   before it is drawn.  `align="center"` adds `(max_width - line_width) // 2`
   pixels to the x origin; `align="right"` adds the full difference.
 
-- **`draw_text_smart()` vs `render_text()`** - this example uses
-  `draw_text_smart()` directly, painting onto a pre-created `Image`.  This is
+- **`draw()` vs `draw_text()`** - this example uses
+  `draw()` directly, painting onto a pre-created `Image`.  This is
   the correct approach when building composite layouts where individual strips
   are assembled into a larger canvas, because it gives explicit control over
   position and canvas color.

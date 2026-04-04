@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-from fontstack import FontConfig, render_text
+from fontstack import FontConfig, draw_text
 
 FONTS = Path(__file__).parent.parent.parent / "tests" / "fonts"
 
-img = render_text(
+img = draw_text(
     "Hello, مرحبا! Welcome to FontStack.",
     font_stack=[
         FontConfig(path=str(FONTS / "NotoSans[wdth,wght].ttf")),

@@ -23,7 +23,7 @@ strips = []
 ALIGNMENTS: list[HorizontalAlign] = ["left", "center", "right"]
 for align, bg in zip(ALIGNMENTS, BG_COLORS, strict=True):
     strip = Image.new("RGBA", (BOX_W, BOX_H), (*bg, 255))
-    manager.draw_text_smart(
+    manager.draw(
         image=strip,
         text=TEXT,
         position=(PAD, PAD),

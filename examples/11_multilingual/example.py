@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from fontstack import FontConfig, FontManager, render_text
+from fontstack import FontConfig, FontManager, draw_text
 
 FONTS = Path(__file__).parent.parent.parent / "tests" / "fonts"
 
@@ -41,7 +41,7 @@ PAD = 16
 
 rows = []
 for _lang, greeting in GREETINGS:
-    img = render_text(
+    img = draw_text(
         greeting,
         font_stack=[],
         manager=manager,
