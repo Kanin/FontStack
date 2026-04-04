@@ -1,4 +1,4 @@
-name: Auto Release
+name: Release and Publish
 
 on:
   push:
@@ -6,11 +6,12 @@ on:
       - main
 
 jobs:
-  release:
-    name: Tag and release if version is new
+  check:
+    name: Check if version is new
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag_exists: ${{ steps.tag_check.outputs.exists }}
     steps:
       - uses: actions/checkout@v4
 
@@ -33,11 +34,38 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create release
-        if: steps.tag_check.outputs.exists == 'false'
+  release-and-publish:
+    name: Build, release, and publish
+    needs: check
+    if: needs.check.outputs.tag_exists == 'false'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/fontstack/
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build
+        run: pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "v${{ steps.version.outputs.version }}" \
-            --title "v${{ steps.version.outputs.version }}" \
+          gh release create "v${{ needs.check.outputs.version }}" \
+            --title "v${{ needs.check.outputs.version }}" \
             --generate-notes
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
