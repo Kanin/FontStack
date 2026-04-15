@@ -1,8 +1,5 @@
 import importlib.metadata
-import inspect
 import typing
-
-from sphinx.util.inspect import stringify_signature
 
 project = "fontstack"
 author = "Kanin"
@@ -46,30 +43,24 @@ intersphinx_mapping = {
 
 # region Overload collapsing
 
-# Sphinx renders every @overload signature separately, which produces 12
-# near-identical blocks for draw_text.  Monkey-patch FunctionDocumenter so
-# overloaded functions show only the implementation signature.
+# Sphinx discovers @overload signatures via typing.get_overloads() and creates
+# a separate documentation entry for each one.  For draw_text (12 overloads)
+# and FontManager.draw (4 overloads) this produces massive duplication.
+# Patching typing.get_overloads to return [] for our functions makes Sphinx
+# document only the single implementation signature while keeping the overloads
+# fully available to type-checkers at development time.
 
-from sphinx.ext.autodoc import FunctionDocumenter  # noqa: E402
-
-_orig_format_sig = FunctionDocumenter.format_signature
-
-
-def _format_signature_no_overloads(self, **kwargs):
-    """Show only the implementation signature for @overload-ed functions."""
-    try:
-        overloads = typing.get_overloads(self.object)
-    except (TypeError, AttributeError):
-        overloads = []
-    if not overloads:
-        return _orig_format_sig(self, **kwargs)
-    # Skip the overloads and format only the implementation's own signature.
-    if self.config.autodoc_typehints in ("none", "description"):
-        kwargs.setdefault("show_annotation", False)
-    sig = inspect.signature(self.object, follow_wrapped=True)
-    return stringify_signature(sig, **kwargs)
+_orig_get_overloads = typing.get_overloads
 
 
-FunctionDocumenter.format_signature = _format_signature_no_overloads
+def _get_overloads_suppressed(func):
+    """Return [] for fontstack functions so Sphinx shows one signature."""
+    module = getattr(func, "__module__", "") or ""
+    if module.startswith("fontstack"):
+        return []
+    return _orig_get_overloads(func)
+
+
+typing.get_overloads = _get_overloads_suppressed
 
 # endregion
