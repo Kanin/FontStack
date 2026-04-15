@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fontstack._core import _prepare_bidi
+from fontstack.bidi import _prepare_bidi
 
 
 class TestPrepareBidi:

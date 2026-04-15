@@ -8,7 +8,7 @@ manual segmentation or language detection required.
 
 ## What it does
 
-Renders `"Hello, مرحبا! Welcome to fontstack."` - a sentence that mixes English
+Renders `"Hello, مرحبا! Welcome to FontStack."` - a sentence that mixes English
 and Arabic - using a two-font stack.  Latin characters are drawn by NotoSans;
 the Arabic greeting is drawn by NotoSansArabic.
 

@@ -1,6 +1,6 @@
 # FontStack
 
-Unicode text rendering for Pillow with automatic per-character font fallback, variable fonts, BiDi/RTL, and emoji.
+Unicode text rendering for Pillow with automatic per-character font fallback, variable fonts, BiDi/RTL, gradients, outlines, shadows, and emoji.
 
 [![PyPI](https://img.shields.io/pypi/v/fontstack)](https://pypi.org/project/fontstack/)
 [![Python 3.11+](https://img.shields.io/pypi/pyversions/fontstack)](https://pypi.org/project/fontstack/)
@@ -14,12 +14,16 @@ Pillow's built-in text rendering uses a single font, so any character not covere
 ## Features
 
 - Per-character font fallback using fonttools for accurate cmap parsing across TTF, OTF, and collection formats.
+- **Font directory scanning** via `font_dir=` constructor arg or `scan_font_dir()` -- point to a folder of fonts and skip manual `FontConfig` wiring. Fonts are loaded in alphabetical order by filename, so the first file becomes the primary font.
 - RTL/BiDi support via `python-bidi` for Unicode BiDi reordering. Arabic text is reshaped with `arabic-reshaper` before rendering so letters connect correctly under Pillow's BASIC layout engine.
 - Emoji rendered via [Pilmoji](https://github.com/jay3332/pilmoji) / Twemoji with correct baseline alignment across mixed font and emoji runs.
+- **Gradient fills** on text, outlines, and shadows via dash-separated color strings (e.g. `"red-blue"`, `"#FF0000-#00FF00"`) or the `"rainbow"` preset. Gradients are slightly diagonal so multi-line text gets natural color variation per line.
+- **Text outlines** (strokes) with configurable thickness and color, including gradient outlines.
+- **Drop shadows** with configurable color and offset. Shadow shape includes the outline when `stroke_width > 0`. Supports gradient shadow colors.
 - Variable font support: set axes by integer value (`weight=700` sets `wght`) or by named style (`weight="Bold"`). Typed `VariationAxes` for IDE autocomplete on standard axes.
 - TrueType/OpenType Collection support (`.ttc` / `.otc`) via `ttc_index` on `FontConfig`.
-- Two rendering modes: `"wrap"` breaks text across lines at a max width; `"scale"` shrinks the font to fit, truncating with `…` as a last resort.
-- **Fit mode** (`"fit"`) combines both: wraps at `max_width`, then shrinks the font until the block fits within `max_height`, then truncates the last visible line with `…` if necessary. `min_size` sets the floor for both scale and fit modes.
+- Two rendering modes: `"wrap"` breaks text across lines at a max width; `"scale"` shrinks the font to fit, truncating with `...` as a last resort.
+- **Fit mode** (`"fit"`) combines both: wraps at `max_width`, then shrinks the font until the block fits within `max_height`, then truncates the last visible line with `...` if necessary. `min_size` sets the floor for both scale and fit modes.
 - Left, center, and right alignment within the text block.
 - LRU caching on both font objects and cmap data; repeated renders with the same stack/size/weight are essentially free.
 - Fully typed: `Literal` on `mode` and `align`, `@overload` signatures that surface `min_size` only when `mode="scale"` or `mode="fit"` and `max_height` only when `mode="fit"`, PEP 561 `py.typed` marker.
@@ -45,6 +49,14 @@ Pillow's built-in text rendering uses a single font, so any character not covere
 </tr>
 <tr>
 <td colspan="2" align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/main/examples/13_fit_mode/output.png" alt="Fit mode - wrap, shrink, truncate"/><br/><em>Fit mode - wrap → shrink → truncate, all four strips share the same bounding box</em></td>
+</tr>
+<tr>
+<td align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/main/examples/16_gradient/output.png" alt="Gradient fills, outlines, and shadows" width="420"/><br/><em>Gradient fills, gradient outlines, gradient shadows</em></td>
+<td align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/main/examples/17_combined/output.png" alt="All effects combined" width="420"/><br/><em>All effects combined - gradient + outline + shadow</em></td>
+</tr>
+<tr>
+<td align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/main/examples/14_outline/output.png" alt="Text outlines" width="420"/><br/><em>Text outlines on Latin, Arabic, and mixed scripts</em></td>
+<td align="center"><img src="https://raw.githubusercontent.com/Kanin/FontStack/refs/heads/main/examples/15_shadow/output.png" alt="Drop shadows" width="420"/><br/><em>Drop shadows with emoji silhouettes</em></td>
 </tr>
 </table>
 
@@ -72,6 +84,10 @@ manager = FontManager(
     ]
 )
 
+# Or point to a directory and let FontStack discover all fonts
+# (loaded alphabetically by filename - first file = primary font):
+# manager = FontManager(font_dir="fonts/")
+
 from PIL import Image
 
 img = Image.new("RGBA", (800, 100), "white")
@@ -95,6 +111,7 @@ img.save("output.png")
 ```python
 from fontstack import FontConfig, FontManager, VariationAxes
 
+# Option 1: explicit font stack (full control over fallback order)
 manager = FontManager(
     default_stack=[
         # Primary font: Noto Sans variable (Latin, Cyrillic, Greek)
@@ -107,6 +124,11 @@ manager = FontManager(
         FontConfig(path="fonts/NotoSansKR[wght].ttf"),
     ]
 )
+
+# Option 2: scan a directory (auto-discovers all .ttf/.otf/.ttc/.otc files)
+# Fonts are loaded in alphabetical order by filename, so the first file
+# becomes the primary font and later files act as fallbacks.
+manager = FontManager(font_dir="fonts/")
 
 from PIL import Image
 
@@ -181,6 +203,37 @@ manager.draw(img, long_text, position=(0, 0), size=32,
                     mode="fit", max_width=400, max_height=120, min_size=10)
 ```
 
+### Text effects
+
+```python
+# Gradient fill (diagonal by default so each line gets different hues)
+manager.draw(img, "Gradient!", position=(20, 20), size=64,
+                    fill="red-gold-orange")
+
+# Pure left-to-right gradient (no diagonal)
+manager.draw(img, "Gradient!", position=(20, 20), size=64,
+                    fill="red-gold-orange", gradient_angle=0.0)
+
+# Outline with solid stroke color
+manager.draw(img, "Outlined", position=(20, 120), size=64,
+                    fill="white", stroke_width=3, stroke_fill="black")
+
+# Drop shadow (shadow includes the outline shape when stroke_width > 0)
+manager.draw(img, "Shadow", position=(20, 220), size=64,
+                    fill="white", shadow_color=(0, 0, 0, 120),
+                    shadow_offset=(4, 4))
+
+# Everything at once: gradient fill + gradient outline + gradient shadow
+manager.draw(img, "All Effects!", position=(20, 320), size=64,
+                    fill="red-orange-gold",
+                    stroke_width=3, stroke_fill="blue-cyan",
+                    shadow_color="gray-darkgray", shadow_offset=(3, 3))
+
+# Rainbow preset
+manager.draw(img, "Rainbow!", position=(20, 420), size=64,
+                    fill="rainbow")
+```
+
 ### Batch rendering with a shared manager
 
 Reusing a `FontManager` across many `draw_text` calls avoids re-parsing cmaps for every image.
@@ -214,37 +267,20 @@ All fonts below are from Google's [Noto](https://fonts.google.com/noto) family, 
 
 > Emoji are handled by Pilmoji/Twemoji automatically, no emoji font needed in the stack.
 
-```python
-from fontstack import FontConfig, FontManager
-
-FONT_DIR = "fonts"
-
-manager = FontManager(
-    default_stack=[
-        FontConfig(path=f"{FONT_DIR}/NotoSans[wdth,wght].ttf"),
-        FontConfig(path=f"{FONT_DIR}/NotoSansArabic[wdth,wght].ttf"),
-        FontConfig(path=f"{FONT_DIR}/NotoSansSC[wght].ttf"),
-        FontConfig(path=f"{FONT_DIR}/NotoSansJP[wght].ttf"),
-        FontConfig(path=f"{FONT_DIR}/NotoSansKR[wght].ttf"),
-        FontConfig(path=f"{FONT_DIR}/NotoSansDevanagari[wdth,wght].ttf"),
-        FontConfig(path=f"{FONT_DIR}/NotoSansHebrew[wdth,wght].ttf"),
-        FontConfig(path=f"{FONT_DIR}/NotoSansBengali[wdth,wght].ttf"),
-        FontConfig(path=f"{FONT_DIR}/NotoSansThai[wdth,wght].ttf"),
-    ]
-)
-```
-
 ---
 
 ## API Reference
 
-### `FontManager(default_stack, max_cache=30)`
+### `FontManager(default_stack=None, *, font_dir=None, max_cache=30)`
 
-| Method | Returns | Description |
+Create with an explicit `default_stack` **or** a `font_dir` path (mutually exclusive). When `font_dir` is given, all `.ttf`, `.otf`, `.ttc`, `.otc` files in the directory are scanned and sorted alphabetically by filename (case-insensitive). The first file in that order becomes the primary font; the rest serve as fallbacks.
+
+| Method / Property | Returns | Description |
 |--------|---------|-------------|
 | `draw(image, text, position, ...)` | `tuple[int, int]` | Draw text onto an existing image in-place. Returns `(width, height)` of the rendered bounding box. |
 | `get_font_chain(size, weight, custom_stack)` | `list[FreeTypeFont]` | Return loaded font objects for the given size/weight (LRU-cached). |
-| `default_stack` | `list[FontConfig]` | Read-only copy of the stack passed at construction. |
+| `default_stack` | `list[FontConfig]` | Read-only copy of the stack (auto-built from `font_dir` if used). |
+| `font_dir` | `str \| Path \| None` | The font directory passed at construction, or `None`. |
 
 #### `draw` key parameters
 
@@ -258,13 +294,22 @@ manager = FontManager(
 | `min_size` | `int` | `12` | Minimum font size for `"scale"` and `"fit"` modes. |
 | `align` | `"left" \| "center" \| "right"` | `"left"` | Horizontal alignment within the text block. |
 | `line_spacing` | `float` | `1.2` | Line-height multiplier (1.0 = tight, 1.5 = loose). |
-| `fill` | `FillType` | `"black"` | Text color: color name, RGB/RGBA tuple, or palette integer. |
+| `fill` | `FillType` | `"black"` | Text color: color name, RGB/RGBA tuple, palette integer, or gradient string. |
+| `stroke_width` | `int` | `0` | Outline thickness in pixels around each glyph. |
+| `stroke_fill` | `FillType \| None` | `None` | Outline color. Same value types as `fill`, including gradients. |
+| `shadow_color` | `FillType \| None` | `None` | Drop-shadow color. Same value types as `fill`, including gradients. |
+| `shadow_offset` | `tuple[int, int]` | `(2, 2)` | Shadow pixel offset `(x, y)`. |
+| `gradient_angle` | `float` | `15.0` | Gradient direction in degrees (0 = left-to-right, 15 = slight diagonal). |
 | `font_stack` | `list[FontConfig] \| None` | `None` | Per-call font stack override; falls back to `default_stack`. |
 | `emoji_source` | `BaseSource` | `Twemoji` | Pilmoji emoji image source. |
 
 ### `draw_text(text, font_stack, ...) -> Image.Image`
 
-Convenience wrapper: creates a `FontManager` (or reuses one via `manager=`), renders `text`, and returns a new `RGBA` image cropped to the result with optional `padding` and `background`.
+Convenience wrapper: creates a `FontManager` (or reuses one via `manager=`), renders `text`, and returns a new `RGBA` image cropped to the result with optional `padding` and `background`. Also accepts `font_dir=` as an alternative to `font_stack`.
+
+### `scan_font_dir(font_dir, *, recursive=False) -> list[FontConfig]`
+
+Scan a directory for font files (`.ttf`, `.otf`, `.ttc`, `.otc`) and return a list of `FontConfig` entries sorted alphabetically by filename (case-insensitive). The first entry becomes the primary font when passed to `FontManager`. TTC/OTC collections produce one entry per member font. Useful for inspecting what `font_dir=` will discover, or for building a custom stack from a directory listing.
 
 ### `FontConfig`
 

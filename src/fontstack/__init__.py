@@ -1,15 +1,16 @@
 """FontStack - Unicode text rendering with automatic per-character font fallback."""
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
-from fontstack._core import (
+from fontstack.discovery import scan_font_dir
+from fontstack.draw import draw_text
+from fontstack.manager import FontManager
+from fontstack.types import (
     FillType,
     FontConfig,
-    FontManager,
     HorizontalAlign,
     RenderMode,
     VariationAxes,
-    draw_text,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "RenderMode",
     "VariationAxes",
     "draw_text",
+    "scan_font_dir",
 ]

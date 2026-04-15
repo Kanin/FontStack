@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from fontstack._core import _load_cmap
+from fontstack.cmap import _load_cmap
 
 FONTS_DIR = Path(__file__).parent / "fonts"
 NOTO_SANS = FONTS_DIR / "NotoSans[wdth,wght].ttf"

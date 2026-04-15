@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-14
+
+### Added
+
+- Gradient text fills via dash-separated color strings (e.g. `fill="red-blue"`) and the built-in `"rainbow"` preset.
+- Gradient outlines (`stroke_fill="rainbow"`) and gradient shadows (`shadow_color="red-orange-yellow"`) using the same syntax.
+- Configurable `gradient_angle` parameter on `draw()` and `draw_text()`. Defaults to `15.0` degrees (slightly diagonal so multi-line text gets natural color variation per line). Set to `0.0` for a pure left-to-right gradient.
+- Text outlines (strokes) with `stroke_width` and `stroke_fill` parameters. Works on all vector glyphs across Latin, Arabic, and other scripts.
+- Drop shadows with `shadow_color` and `shadow_offset`. Shadow shape includes the outline when `stroke_width > 0`. Semi-transparent RGBA colors blend cleanly.
+- Font directory scanning via `font_dir=` on `FontManager` or `scan_font_dir()`. Point to a folder of fonts and skip manual `FontConfig` wiring. Fonts load in alphabetical order by filename (case-insensitive), so the first file becomes the primary font.
+- `scan_font_dir()` exported as a public API for inspecting discovered fonts before building a manager.
+
+### Changed
+
+- Internal module split: the monolithic `_core.py` is now split into `types.py`, `gradient.py`, `bidi.py`, `cmap.py`, `discovery.py`, `manager.py`, and `draw.py`. Public API is unchanged - all imports from `fontstack` still work.
+- `scan_font_dir` added to `__all__` in the top-level package.
+
 ## [0.2.0] - 2026-04-03
 
 ### Changed
@@ -77,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Switched from Pillow's RAQM layout engine to the BASIC layout engine for font loading. BASIC produces consistent glyph advance widths across all platforms and doesn't require the optional `libraqm` system library.
 
+[0.3.0]: https://github.com/Kanin/fontstack/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Kanin/fontstack/releases/tag/v0.2.0
 [0.1.3.post1]: https://github.com/Kanin/fontstack/releases/tag/v0.1.3.post1
 [0.1.3]: https://github.com/Kanin/fontstack/releases/tag/v0.1.3

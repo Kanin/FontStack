@@ -21,6 +21,11 @@ Each example is a standalone script that generates an `output.png`.
 | 11 | [Nine scripts in one stack](11_multilingual/) | "Hello, World!" in nine languages from one `FontManager` | ![](11_multilingual/output.png) |
 | 12 | [Unicode symbols and math](12_symbols/) | Arrows, chess pieces, math alphanumerics, fraktur | ![](12_symbols/output.png) |
 | 13 | [Fit mode: wrap, shrink, truncate](13_fit_mode/) | `mode="fit"` with `max_width`, `max_height`, and `min_size` | ![](13_fit_mode/output.png) |
+| 14 | [Text outlines (strokes)](14_outline/) | `stroke_width` and `stroke_fill` on Latin and Arabic | ![](14_outline/output.png) |
+| 15 | [Drop shadows](15_shadow/) | `shadow_color` and `shadow_offset` with emoji and outlines | ![](15_shadow/output.png) |
+| 16 | [Gradient fills, outlines, shadows](16_gradient/) | Dash-separated color stops and `"rainbow"` preset | ![](16_gradient/output.png) |
+| 17 | [Combined features](17_combined/) | Gradients + outlines + shadows + multi-script + weight | ![](17_combined/output.png) |
+| 18 | [Gradient angle](18_gradient_angle/) | `gradient_angle` on multi-line wrapped text | ![](18_gradient_angle/output.png) |
 
 ---
 

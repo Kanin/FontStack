@@ -6,7 +6,7 @@ import pytest
 from PIL import Image
 
 from fontstack import FontConfig, FontManager, draw_text
-from fontstack._core import _prepare_bidi
+from fontstack.bidi import _prepare_bidi
 
 # region draw
 
@@ -161,7 +161,9 @@ class TestDrawText:
         assert padded.height == no_pad.height + 40
 
     def test_no_stack_no_manager_raises(self) -> None:
-        with pytest.raises(ValueError, match="Provide at least one FontConfig"):
+        with pytest.raises(
+            ValueError, match="Provide font_stack, font_dir, or a pre-built manager"
+        ):
             draw_text("Hello", font_stack=[])
 
     def test_reuse_manager_produces_same_output(
@@ -372,6 +374,304 @@ class TestFitMode:
         # Output must stay within bounds and must be non-empty (truncated, not dropped).
         assert h <= max_h
         assert w > 0
+
+
+# endregion
+
+
+# region Gradient helpers
+
+
+class TestGradientHelpers:
+    def test_is_gradient_plain_color_string(self) -> None:
+        from fontstack.gradient import _is_gradient
+
+        assert _is_gradient("red") is False
+        assert _is_gradient("black") is False
+        assert _is_gradient("skyblue") is False
+
+    def test_is_gradient_non_string(self) -> None:
+        from fontstack.gradient import _is_gradient
+
+        assert _is_gradient((255, 0, 0)) is False
+        assert _is_gradient(0) is False
+
+    def test_is_gradient_dash_separated(self) -> None:
+        from fontstack.gradient import _is_gradient
+
+        assert _is_gradient("red-blue") is True
+        assert _is_gradient("#FF0000-#00FF00-#0000FF") is True
+
+    def test_is_gradient_rainbow_preset(self) -> None:
+        from fontstack.gradient import _is_gradient
+
+        assert _is_gradient("rainbow") is True
+
+    def test_parse_gradient_rainbow(self) -> None:
+        from fontstack.gradient import _parse_gradient
+
+        stops = _parse_gradient("rainbow")
+        assert len(stops) == 7
+        # First stop should be red-ish.
+        assert stops[0] == (255, 0, 0)
+
+    def test_parse_gradient_two_stops(self) -> None:
+        from fontstack.gradient import _parse_gradient
+
+        stops = _parse_gradient("red-blue")
+        assert len(stops) == 2
+        assert stops[0] == (255, 0, 0)
+        assert stops[1] == (0, 0, 255)
+
+    def test_parse_gradient_hex_colors(self) -> None:
+        from fontstack.gradient import _parse_gradient
+
+        stops = _parse_gradient("#FF0000-#00FF00-#0000FF")
+        assert len(stops) == 3
+        assert stops[0] == (255, 0, 0)
+        assert stops[1] == (0, 255, 0)
+        assert stops[2] == (0, 0, 255)
+
+    def test_parse_gradient_single_color_raises(self) -> None:
+        from fontstack.gradient import _parse_gradient
+
+        with pytest.raises(ValueError, match="at least two"):
+            _parse_gradient("red")
+
+    def test_make_gradient_dimensions(self) -> None:
+        from fontstack.gradient import _make_gradient
+
+        img = _make_gradient([(255, 0, 0), (0, 0, 255)], 100, 50)
+        assert img.size == (100, 50)
+        assert img.mode == "RGBA"
+
+    def test_make_gradient_left_right_colors(self) -> None:
+        from fontstack.gradient import _make_gradient
+
+        img = _make_gradient([(255, 0, 0), (0, 0, 255)], 100, 10)
+        # Left edge should be red, right edge should be blue.
+        left_pixel = img.getpixel((0, 0))
+        right_pixel = img.getpixel((99, 0))
+        assert isinstance(left_pixel, tuple) and left_pixel[:3] == (255, 0, 0)
+        assert isinstance(right_pixel, tuple) and right_pixel[:3] == (0, 0, 255)
+
+
+# endregion
+
+
+# region Stroke (outline) rendering
+
+
+class TestStrokeRendering:
+    def _canvas(self, size: tuple[int, int] = (800, 200)) -> Image.Image:
+        return Image.new("RGBA", size, (255, 255, 255, 255))
+
+    def test_stroke_produces_wider_bbox(self, font_manager: FontManager) -> None:
+        """Text with a stroke outline should occupy more pixels than without."""
+        img_plain = self._canvas()
+        w_plain, h_plain = font_manager.draw(
+            img_plain,
+            "Hello",
+            position=(10, 10),
+            size=40,
+            stroke_width=0,
+        )
+        img_stroke = self._canvas()
+        w_stroke, h_stroke = font_manager.draw(
+            img_stroke,
+            "Hello",
+            position=(10, 10),
+            size=40,
+            stroke_width=4,
+            stroke_fill="red",
+        )
+        assert w_stroke > w_plain or h_stroke > h_plain
+
+    def test_stroke_via_draw_text(self, default_stack: list[FontConfig]) -> None:
+        img = draw_text(
+            "Outlined",
+            font_stack=default_stack,
+            size=48,
+            stroke_width=3,
+            stroke_fill="blue",
+        )
+        assert isinstance(img, Image.Image)
+        assert img.width > 0
+
+    def test_stroke_no_fill_uses_text_color(self, font_manager: FontManager) -> None:
+        """When stroke_fill is None, Pillow uses fill as the outline color."""
+        img = self._canvas()
+        w, h = font_manager.draw(
+            img,
+            "Test",
+            position=(10, 10),
+            size=40,
+            stroke_width=2,
+            stroke_fill=None,
+            fill="red",
+        )
+        assert w > 0 and h > 0
+
+
+# endregion
+
+
+# region Shadow rendering
+
+
+class TestShadowRendering:
+    def _canvas(self, size: tuple[int, int] = (800, 200)) -> Image.Image:
+        return Image.new("RGBA", size, (255, 255, 255, 255))
+
+    def test_shadow_extends_bbox(self, font_manager: FontManager) -> None:
+        """Shadow should make the bounding box larger due to the offset copy."""
+        img_plain = self._canvas()
+        w_plain, h_plain = font_manager.draw(
+            img_plain,
+            "Hello",
+            position=(10, 10),
+            size=40,
+        )
+        img_shadow = self._canvas()
+        w_shadow, h_shadow = font_manager.draw(
+            img_shadow,
+            "Hello",
+            position=(10, 10),
+            size=40,
+            shadow_color="gray",
+            shadow_offset=(5, 5),
+        )
+        assert w_shadow >= w_plain
+        assert h_shadow >= h_plain
+
+    def test_shadow_via_draw_text(self, default_stack: list[FontConfig]) -> None:
+        img = draw_text(
+            "Shadow",
+            font_stack=default_stack,
+            size=48,
+            shadow_color=(0, 0, 0, 128),
+            shadow_offset=(3, 3),
+        )
+        assert isinstance(img, Image.Image)
+        assert img.width > 0
+
+    def test_no_shadow_when_color_is_none(self, font_manager: FontManager) -> None:
+        """When shadow_color is None, the output should be identical to no-shadow."""
+        img_a = self._canvas()
+        w_a, h_a = font_manager.draw(
+            img_a,
+            "Test",
+            position=(10, 10),
+            size=40,
+            shadow_color=None,
+        )
+        img_b = self._canvas()
+        w_b, h_b = font_manager.draw(
+            img_b,
+            "Test",
+            position=(10, 10),
+            size=40,
+        )
+        assert (w_a, h_a) == (w_b, h_b)
+
+
+# endregion
+
+
+# region Gradient rendering
+
+
+class TestGradientRendering:
+    def test_gradient_fill_produces_colored_output(
+        self,
+        default_stack: list[FontConfig],
+    ) -> None:
+        """Gradient fill should produce non-uniform colored pixels."""
+        img = draw_text(
+            "Gradient",
+            font_stack=default_stack,
+            size=60,
+            fill="red-blue",
+            padding=2,
+        )
+        assert img.width > 0
+        assert img.height > 0
+        # Sample left and right thirds of the image row at the vertical center.
+        mid_y = img.height // 2
+        left_pixel = img.getpixel((2, mid_y))
+        right_pixel = img.getpixel((img.width - 3, mid_y))
+        # They should differ in color (gradient moves from red to blue).
+        assert isinstance(left_pixel, tuple) and isinstance(right_pixel, tuple)
+        assert left_pixel[:3] != right_pixel[:3]
+
+    def test_rainbow_preset(self, default_stack: list[FontConfig]) -> None:
+        img = draw_text(
+            "Rainbow",
+            font_stack=default_stack,
+            size=60,
+            fill="rainbow",
+            padding=2,
+        )
+        assert img.width > 0
+        assert img.height > 0
+
+    def test_gradient_with_stroke(self, default_stack: list[FontConfig]) -> None:
+        """Gradient fill combined with a solid stroke outline."""
+        img = draw_text(
+            "GradStroke",
+            font_stack=default_stack,
+            size=48,
+            fill="red-green-blue",
+            stroke_width=2,
+            stroke_fill="black",
+            padding=4,
+        )
+        assert img.width > 0
+
+    def test_gradient_with_shadow(self, default_stack: list[FontConfig]) -> None:
+        """Gradient fill combined with a drop shadow."""
+        img = draw_text(
+            "GradShadow",
+            font_stack=default_stack,
+            size=48,
+            fill="rainbow",
+            shadow_color="gray",
+            shadow_offset=(3, 3),
+            padding=4,
+        )
+        assert img.width > 0
+
+    def test_gradient_with_stroke_and_shadow(
+        self,
+        default_stack: list[FontConfig],
+    ) -> None:
+        """All three features combined: gradient + stroke + shadow."""
+        img = draw_text(
+            "AllFeatures",
+            font_stack=default_stack,
+            size=48,
+            fill="red-blue",
+            stroke_width=2,
+            stroke_fill="white",
+            shadow_color="black",
+            shadow_offset=(2, 2),
+            background="white",
+            padding=8,
+        )
+        assert isinstance(img, Image.Image)
+        assert img.width > 0
+        assert img.height > 0
+
+    def test_plain_color_still_works(self, default_stack: list[FontConfig]) -> None:
+        """Non-gradient string fills must keep working as before."""
+        img = draw_text(
+            "Plain",
+            font_stack=default_stack,
+            size=32,
+            fill="red",
+            padding=2,
+        )
+        assert img.width > 0
 
 
 # endregion
