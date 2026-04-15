@@ -7,9 +7,10 @@ Unicode text rendering with automatic per-character font fallback, BiDi support,
    :maxdepth: 2
    :caption: Contents:
 
-API Reference
--------------
+   quickstart
+   api
 
-.. automodule:: fontstack
-   :members:
-   :undoc-members:
+Indices and tables
+------------------
+
+* :ref:`genindex`
