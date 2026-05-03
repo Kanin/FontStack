@@ -737,5 +737,22 @@ class TestDrawAnchor:
         with pytest.raises(ValueError, match="anchor must be one of"):
             font_manager.draw(img, "Hello", position=(0, 0), anchor="xx")  # type: ignore[arg-type]
 
+    def test_emoji_leading_text_not_clipped(self, font_manager: FontManager) -> None:
+        """Text starting with an emoji must not be shifted off the left edge.
+
+        _measure_block advances x by ctx.size for emoji segments (not by
+        font.getlength, which returns a .notdef advance).  A wrong advance
+        inflates vis_l and causes x_off = -vis_l to push the block off-canvas.
+        """
+        px, py = 100, 100
+        img = self._canvas()
+        font_manager.draw(img, "🏆 Winner", position=(px, py), size=32, anchor="lt")
+
+        bbox = img.getbbox()
+        assert bbox is not None
+        # The leftmost rendered pixel must be at or to the right of px.
+        # A negative x_off bug would place it significantly left of px.
+        assert bbox[0] >= px - 2  # allow 2 px for sub-pixel bearing
+
 
 # endregion

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-05-03
+
+### Fixed
+
+- Glyphs with negative left side bearings (certain Arabic contextual forms extend 1 px left of the advance origin) were clipped at the canvas edge in `draw_text()`. A 4 px overhang buffer is now added to `margin` so the leftmost pixel always falls within the canvas before the `getbbox()` crop removes the surplus space.
+- `_measure_block` computed the visual bounding box by rendering all characters with the primary (Latin) font. For Arabic/CJK fallback text, this produced `.notdef` tofu boxes whose left inset did not match the real glyphs, yielding an incorrect `vis_l` and a negative `x_off` that clipped text against the left edge. `_measure_block` now iterates `_segment_text` and draws each segment with its actual fallback font, matching the per-font logic of `_render_segments`.
+- Text blocks starting with an emoji were shifted left by `vis_l` pixels when using anchor `"lt"`. The measurement canvas previously skipped emoji segments but advanced `x_seg` by `font.getlength()`, which returns the `.notdef` advance (~38 px at size 64) rather than the actual pilmoji render width (~64 px). This inflated `vis_l`, causing `x_off = -vis_l` to push the whole block off-canvas. The fix paints a sentinel pixel at each emoji's top-left corner in the measurement canvas so `getbbox()` sees the true left boundary of the line, and advances `x_seg` by `ctx.size` (the actual pilmoji square size).
+- `emoji_position_offset` is now adjusted by `vis_t` (the vertical offset returned by `_measure_block`) so emoji tops align with the true visual top of the text rather than the nominal `y_pos`, eliminating a ~1 px low-drift when the anchor shifts the draw position upward.
+
 ## [0.3.3] - 2026-05-03
 
 ### Fixed

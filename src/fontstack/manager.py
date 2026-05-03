@@ -651,13 +651,16 @@ class FontManager:
             x_seg = MARGIN
             for segment in self._segment_text(line, ctx):
                 if EMOJI_REGEX.search(segment.text):
-                    # Emoji are not drawn to the measurement canvas; advance
-                    # x by the reported size so subsequent segments land at
-                    # the correct horizontal position.
-                    try:
-                        x_seg += int(segment.font.getlength(segment.text))
-                    except Exception:
-                        x_seg += ctx.size
+                    # Pilmoji renders each emoji sequence as a square image of
+                    # side ctx.size starting exactly at x_seg (no left bearing).
+                    # Paint a single pixel at the emoji's top-left corner so
+                    # that getbbox() includes the emoji's left edge in vis_l.
+                    # Without this, vis_l only reflects the first *text* segment
+                    # and x_off would shift emoji-leading lines too far left.
+                    seg_asc = segment.font.getmetrics()[0]
+                    emoji_top = baseline - seg_asc
+                    temp_draw.point((int(x_seg), int(emoji_top)), fill=255)
+                    x_seg += ctx.size
                     continue
                 seg_asc = segment.font.getmetrics()[0]
                 seg_y = baseline - seg_asc
@@ -1133,9 +1136,15 @@ class FontManager:
                     # getmask2 returns offset[1] ≈ vto, giving line_y ≈ y_pos
                     # already.  No correction needed (oy = 0).
                     has_emoji = bool(EMOJI_REGEX.search(segment.text))
-                    emoji_oy = (
-                        int(visual_top_offset - primary_ascent) if has_emoji else 0
-                    )
+                    if has_emoji:
+                        # Place emoji top at the actual text visual top.
+                        # visual_top_offset - primary_ascent lands emoji at
+                        # y_pos, but the real text visual top is y_pos + vis_t
+                        # (vis_t is ≤ 0 when antialiased pixels appear above
+                        # y_pos).  Adding vis_t closes the gap.
+                        emoji_oy = int(visual_top_offset - primary_ascent + vis_t)
+                    else:
+                        emoji_oy = 0
 
                     text_kwargs: dict = {
                         "fill": seg_fill,
