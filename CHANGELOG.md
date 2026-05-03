@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2026-05-03
+
+### Fixed
+
+- Emoji rendered ~2 px too high when mixed with text. A `vis_t` correction was added to `emoji_oy` in the previous release to align emoji with the text visual top, but `vis_t` is negative for mixed lines (antialiased text pixels overshoot `y_pos` upward), so adding it shifted emoji above `y_pos`. The formula `vto − asc` already places emoji exactly at `y_pos` (cap height top) without any further adjustment; the `vis_t` term is removed.
+
 ## [0.3.5] - 2026-05-03
 
 ### Fixed

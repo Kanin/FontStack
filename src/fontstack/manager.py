@@ -1137,12 +1137,11 @@ class FontManager:
                     # already.  No correction needed (oy = 0).
                     has_emoji = bool(EMOJI_REGEX.search(segment.text))
                     if has_emoji:
-                        # Place emoji top at the actual text visual top.
-                        # visual_top_offset - primary_ascent lands emoji at
-                        # y_pos, but the real text visual top is y_pos + vis_t
-                        # (vis_t is ≤ 0 when antialiased pixels appear above
-                        # y_pos).  Adding vis_t closes the gap.
-                        emoji_oy = int(visual_top_offset - primary_ascent + vis_t)
+                        # vto - asc corrects for Pilmoji's internal offset:
+                        # getmask2 returns offset[1] = asc for spaces-only runs,
+                        # shifting line_y to (font_y + asc).  Subtracting asc
+                        # and adding vto lands the emoji top exactly at y_pos.
+                        emoji_oy = int(visual_top_offset - primary_ascent)
                     else:
                         emoji_oy = 0
 
