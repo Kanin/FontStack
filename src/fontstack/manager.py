@@ -1137,11 +1137,19 @@ class FontManager:
                     # already.  No correction needed (oy = 0).
                     has_emoji = bool(EMOJI_REGEX.search(segment.text))
                     if has_emoji:
-                        # vto - asc corrects for Pilmoji's internal offset:
-                        # getmask2 returns offset[1] = asc for spaces-only runs,
-                        # shifting line_y to (font_y + asc).  Subtracting asc
-                        # and adding vto lands the emoji top exactly at y_pos.
-                        emoji_oy = int(visual_top_offset - primary_ascent)
+                        # Pilmoji renders emoji as a square of side `font.size`.
+                        # getmask2 on a spaces-only run returns offset[1] = asc,
+                        # so line_y = font_y + asc = y_pos + (asc - vto) = baseline.
+                        # We want the emoji vertically centered on the cap height
+                        # (y_pos … baseline), so:
+                        #   emoji_top = y_pos + (cap_h - emoji_size) / 2
+                        #             = y_pos - (emoji_size - cap_h) / 2
+                        # where cap_h = asc - vto.
+                        # emoji_oy = emoji_top - line_y
+                        #          = -(cap_h + emoji_size) / 2
+                        cap_h = primary_ascent - visual_top_offset
+                        emoji_size = draw_ctx.size
+                        emoji_oy = -int((cap_h + emoji_size) / 2)
                     else:
                         emoji_oy = 0
 

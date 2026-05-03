@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2026-05-03
+
+### Fixed
+
+- Emoji are now vertically centered on the cap height rather than top-aligned with it. Pilmoji renders each emoji as a square of side `font.size`, which is typically larger than the cap height (`asc − vto`). Top-aligning placed the emoji above center; the corrected formula offsets the emoji so its vertical midpoint matches the midpoint of the cap height: `emoji_oy = −⌊(cap_height + emoji_size) / 2⌋`.
+
 ## [0.3.6] - 2026-05-03
 
 ### Fixed
