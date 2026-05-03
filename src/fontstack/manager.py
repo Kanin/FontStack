@@ -653,13 +653,13 @@ class FontManager:
                 if EMOJI_REGEX.search(segment.text):
                     # Pilmoji renders each emoji sequence as a square image of
                     # side ctx.size starting exactly at x_seg (no left bearing).
-                    # Paint a single pixel at the emoji's top-left corner so
-                    # that getbbox() includes the emoji's left edge in vis_l.
-                    # Without this, vis_l only reflects the first *text* segment
-                    # and x_off would shift emoji-leading lines too far left.
-                    seg_asc = segment.font.getmetrics()[0]
-                    emoji_top = baseline - seg_asc
-                    temp_draw.point((int(x_seg), int(emoji_top)), fill=255)
+                    # The emoji image top lands at y_pos (matching _render_segments
+                    # with oy = vto - asc).  Paint a sentinel pixel there so that
+                    # getbbox() captures the true left and top bounds of the line.
+                    # Using baseline - seg_asc (= y_pos - vto) was wrong: it placed
+                    # the sentinel at the ascender line, inflating |vis_t| by ~vto
+                    # and causing the vis_t correction in emoji_oy to over-shift.
+                    temp_draw.point((int(x_seg), int(y_pos)), fill=255)
                     x_seg += ctx.size
                     continue
                 seg_asc = segment.font.getmetrics()[0]

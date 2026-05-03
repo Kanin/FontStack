@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-05-03
+
+### Fixed
+
+- Emoji rendered too high when the text block used a non-`"lt"` anchor. The measurement sentinel pixel placed in `_measure_block` for emoji segments was positioned at `baseline - seg_asc` (the font ascender line, `y_pos - vto`) instead of `y_pos` where Pilmoji actually renders the emoji image. This caused `vis_t` to be inflated by roughly `vto` pixels, and the `vis_t` correction applied to `emoji_oy` in `_render_segments` then shifted emoji up by the same amount. Sentinel is now placed at `y_pos`, matching the true emoji render top.
+
 ## [0.3.4] - 2026-05-03
 
 ### Fixed
