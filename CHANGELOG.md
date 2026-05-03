@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-05-03
+
+### Fixed
+
+- Emoji vertical alignment is now correct in all cases. The root cause was that Pilmoji's internal `getmask2` returns `offset[1] ≈ vto` for mixed text/emoji strings but `offset[1] = ascent` for spaces-only strings (emoji placeholders), making a single `emoji_position_offset` unable to work for both. `_segment_text` now splits at emoji boundaries via `EMOJI_REGEX.finditer` so each emoji sequence is isolated in its own segment. With a spaces-only `text_line`, `getmask2` returns a predictable `offset[1] = ascent`, which is corrected with `oy = vto − ascent` to place the emoji image at the visual glyph top. Text-only segments use `oy = 0` since their `getmask2` offset already lands text at `y_pos`.
+- Fallback-font glyphs (e.g. Arabic) no longer render too high when mixed with Latin. A previous fix attempt used `anchor="lt"` on `pil.text()`, which bypassed each font's own `getmask2` vertical offset and caused non-primary fonts to be drawn from their em-square top instead of their ascender line. Reverted to Pilmoji's default `"la"` anchor: each font's `getmask2` offset is font-specific and naturally aligns all scripts to the shared baseline.
+
 ## [0.3.2] - 2026-05-03
 
 ### Fixed

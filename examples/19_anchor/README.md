@@ -50,4 +50,4 @@ where `position` always referred to the top-left corner of the text block.
 | Parameter | Value | Purpose |
 |-----------|-------|---------|
 | `anchor`  | `"lt"` … `"rb"` | Controls which point of the block lands at `position` |
-| `position` | `(cx, cy)` — cell centre | Shared reference point in every cell |
+| `position` | `(cx, cy)` - cell centre | Shared reference point in every cell |

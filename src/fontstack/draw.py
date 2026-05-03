@@ -553,7 +553,11 @@ def draw_text(
     sw = stroke_width
     sx_off = max(shadow_offset[0], 0) if shadow_color is not None else 0
     sy_off = max(shadow_offset[1], 0) if shadow_color is not None else 0
-    margin = sw + max(sx_off, sy_off)
+    # Add a small overhang buffer so glyphs with negative left side bearings
+    # (e.g. certain Arabic contextual forms, -1 px at all tested sizes) are
+    # not clipped at the canvas edge before the getbbox() crop.
+    _OVERHANG = 4
+    margin = sw + max(sx_off, sy_off) + _OVERHANG
 
     canvas_w = (
         (effective_width if max_width is not None else len(text) * size + 100)

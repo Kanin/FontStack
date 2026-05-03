@@ -364,20 +364,64 @@ class FontManager:
         if not text:
             return []
 
-        segments: list[_Segment] = []
-        current_font = self._get_font_for_char(text[0], ctx)
-        current_run = text[0]
+        # Split at emoji boundaries first so that each emoji sequence lands in
+        # its own segment.  This guarantees that Pilmoji's internal text_line
+        # for emoji segments is spaces-only, making getmask2's offset[1]
+        # predictable (= ascent) regardless of what surrounds the emoji.  When
+        # emoji share a segment with real glyphs getmask2 returns offset[1] ≈
+        # vto instead, so a single emoji_position_offset cannot serve both
+        # cases correctly.
+        raw: list[_Segment] = []
+        prev = 0
+        for m in EMOJI_REGEX.finditer(text):
+            span_start, span_end = m.start(), m.end()
+            if span_start > prev:
+                # Non-emoji span - segment by font as usual.
+                span = text[prev:span_start]
+                cur_font = self._get_font_for_char(span[0], ctx)
+                cur_run = span[0]
+                for char in span[1:]:
+                    f = self._get_font_for_char(char, ctx)
+                    if f is cur_font:
+                        cur_run += char
+                    else:
+                        raw.append(_Segment(cur_run, cur_font))
+                        cur_run = char
+                        cur_font = f
+                raw.append(_Segment(cur_run, cur_font))
+            # Emoji sequence - always primary font, isolated segment.
+            raw.append(_Segment(m.group(), ctx.chain[0]))
+            prev = span_end
+        if prev < len(text):
+            # Trailing non-emoji span.
+            span = text[prev:]
+            cur_font = self._get_font_for_char(span[0], ctx)
+            cur_run = span[0]
+            for char in span[1:]:
+                f = self._get_font_for_char(char, ctx)
+                if f is cur_font:
+                    cur_run += char
+                else:
+                    raw.append(_Segment(cur_run, cur_font))
+                    cur_run = char
+                    cur_font = f
+            raw.append(_Segment(cur_run, cur_font))
 
-        for char in text[1:]:
-            font = self._get_font_for_char(char, ctx)
-            if font is current_font:
-                current_run += char
+        if not raw:
+            return []
+
+        # Merge adjacent non-emoji segments that use the same font.
+        segments: list[_Segment] = [raw[0]]
+        for seg in raw[1:]:
+            prev_seg = segments[-1]
+            if (
+                seg.font is prev_seg.font
+                and not EMOJI_REGEX.search(prev_seg.text)
+                and not EMOJI_REGEX.search(seg.text)
+            ):
+                segments[-1] = _Segment(prev_seg.text + seg.text, prev_seg.font)
             else:
-                segments.append(_Segment(current_run, current_font))
-                current_run = char
-                current_font = font
-
-        segments.append(_Segment(current_run, current_font))
+                segments.append(seg)
         return segments
 
     def _measure_text(
@@ -582,11 +626,12 @@ class FontManager:
         # We use MARGIN >= vto so that font_y is always non-negative.
         primary = ctx.chain[0]
         vto = int(primary.getbbox("A")[1])
+        primary_asc = primary.getmetrics()[0]
         MARGIN = max(vto + 2, 8)
 
         n = len(render_lines)
         est_w = (
-            int(max(primary.getlength(ln) for ln in render_lines) * 1.1)
+            int(max(self._measure_text(ln, ctx) for ln in render_lines) * 1.1)
             + MARGIN * 2
             + 20
         )
@@ -596,7 +641,33 @@ class FontManager:
         temp_draw = ImageDraw.Draw(temp)
         for i, line in enumerate(render_lines):
             y_pos = MARGIN + i * line_step
-            temp_draw.text((MARGIN, y_pos - vto), line, font=primary, fill=255)
+            # Use the same per-segment, per-font rendering as _render_segments
+            # so that fallback-font glyphs (Arabic, CJK, …) are measured with
+            # their actual font rather than the primary font's .notdef glyphs.
+            # Primary-font-only rendering produced incorrect vis_l values for
+            # Arabic text (tofu boxes have a positive left inset that doesn't
+            # exist in the real glyphs), causing x_off to push text off-canvas.
+            baseline = y_pos - vto + primary_asc
+            x_seg = MARGIN
+            for segment in self._segment_text(line, ctx):
+                if EMOJI_REGEX.search(segment.text):
+                    # Emoji are not drawn to the measurement canvas; advance
+                    # x by the reported size so subsequent segments land at
+                    # the correct horizontal position.
+                    try:
+                        x_seg += int(segment.font.getlength(segment.text))
+                    except Exception:
+                        x_seg += ctx.size
+                    continue
+                seg_asc = segment.font.getmetrics()[0]
+                seg_y = baseline - seg_asc
+                temp_draw.text(
+                    (int(x_seg), seg_y), segment.text, font=segment.font, fill=255
+                )
+                try:
+                    x_seg += segment.font.getlength(segment.text)
+                except Exception:
+                    x_seg += ctx.size * 0.6 * len(segment.text)
 
         bb = temp.getbbox()
         if bb is None:
@@ -1050,12 +1121,26 @@ class FontManager:
                 for segment in self._segment_text(line, draw_ctx):
                     font_ascent = segment.font.getmetrics()[0]
                     font_y = baseline - font_ascent
-                    emoji_y_correction = font_y - corrected_y
+
+                    # Emoji segments are isolated (no real glyphs), so Pilmoji
+                    # passes a spaces-only text_line to getmask2.  With the
+                    # default "la" anchor getmask2 then returns offset[1] =
+                    # primary_ascent, shifting line_y to y_pos + (asc - vto)
+                    # (the baseline).  Correct with oy = vto - asc so the
+                    # emoji image lands at y_pos (the visual glyph top).
+                    #
+                    # Text segments contain real glyphs alongside spaces, so
+                    # getmask2 returns offset[1] ≈ vto, giving line_y ≈ y_pos
+                    # already.  No correction needed (oy = 0).
+                    has_emoji = bool(EMOJI_REGEX.search(segment.text))
+                    emoji_oy = (
+                        int(visual_top_offset - primary_ascent) if has_emoji else 0
+                    )
 
                     text_kwargs: dict = {
                         "fill": seg_fill,
                         "stroke_width": seg_stroke_width,
-                        "emoji_position_offset": (0, int(-emoji_y_correction)),
+                        "emoji_position_offset": (0, emoji_oy),
                     }
                     if seg_stroke_fill is not None:
                         text_kwargs["stroke_fill"] = seg_stroke_fill
