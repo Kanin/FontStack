@@ -18,6 +18,8 @@ Types
 
 .. autodata:: HorizontalAlign
 
+.. autodata:: Anchor
+
 FontManager
 -----------
 

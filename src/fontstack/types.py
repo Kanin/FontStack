@@ -8,6 +8,7 @@ from typing import Literal, NamedTuple, TypedDict
 from PIL import ImageFont
 
 __all__ = [
+    "Anchor",
     "FillType",
     "FontConfig",
     "HorizontalAlign",
@@ -32,6 +33,12 @@ RenderMode = Literal["wrap", "scale", "fit"]
 
 # Horizontal alignment within the text block.
 HorizontalAlign = Literal["left", "center", "right"]
+
+# Anchor point for positioning a text block at a given coordinate.
+# Two-character PIL-style code: horizontal (l/m/r) + vertical (t/m/b).
+# ``"lt"`` (top-left, the default) is backward-compatible with the
+# ``position`` argument having always referred to the top-left corner.
+Anchor = Literal["lt", "mt", "rt", "lm", "mm", "rm", "lb", "mb", "rb"]
 
 # Sentinel used as an unconstrained width budget.  Using a finite number avoids
 # None-checks throughout the layout and measurement code while keeping all

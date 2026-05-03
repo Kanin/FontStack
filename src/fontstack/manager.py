@@ -25,6 +25,7 @@ from fontstack.gradient import (
 )
 from fontstack.types import (
     _UNBOUNDED_WIDTH,
+    Anchor,
     FillType,
     FontConfig,
     HorizontalAlign,
@@ -463,6 +464,104 @@ class FontManager:
 
         return lines
 
+    def _measure_block(
+        self,
+        text: str,
+        ctx: _RenderContext,
+        mode: RenderMode,
+        effective_width: int,
+        max_height: int | None,
+        min_size: int,
+        line_spacing: float,
+        weight: int | str,
+        font_stack: list[FontConfig] | None,
+    ) -> tuple[int, int]:
+        """
+        Return the ``(width, height)`` of the text block without drawing.
+
+        Mirrors the layout logic of :meth:`draw` for all three modes, but
+        skips every drawing operation.  *text* must already be BiDi-reordered.
+        The returned dimensions are the tightest bounding box around the
+        visible glyphs — i.e. the maximum line width and the total vertical
+        span — not the *effective_width* container.
+
+        Used by :meth:`draw` to compute anchor offsets before positioning.
+        """
+        size = ctx.size
+
+        if mode == "scale":
+            current_size = size
+            while current_size > min_size:
+                if self._measure_text(text, ctx) <= effective_width:
+                    break
+                current_size -= 2
+                ctx = self._resolve_context(current_size, weight, font_stack)
+            display_text = text
+            if self._measure_text(display_text, ctx) > effective_width:
+                while display_text:
+                    display_text = display_text[:-1]
+                    candidate = display_text + "..."
+                    if self._measure_text(candidate, ctx) <= effective_width:
+                        display_text = candidate
+                        break
+                else:
+                    display_text = (
+                        "..."
+                        if self._measure_text("...", ctx) <= effective_width
+                        else ""
+                    )
+            bw = int(self._measure_text(display_text, ctx)) if display_text else 0
+            bh = ctx.size
+            return (bw, bh)
+
+        elif mode == "wrap":
+            lines = self._wrap_lines(text, ctx, effective_width)
+            bw = int(max(self._measure_text(line, ctx) for line in lines))
+            bh = (len(lines) - 1) * int(size * line_spacing) + size
+            return (bw, bh)
+
+        else:  # "fit"
+            current_size = size
+            effective_height = (
+                max_height if max_height is not None else _UNBOUNDED_WIDTH
+            )
+            while current_size > min_size:
+                ctx = self._resolve_context(current_size, weight, font_stack)
+                lines = self._wrap_lines(text, ctx, effective_width)
+                total_h = (len(lines) - 1) * int(
+                    current_size * line_spacing
+                ) + current_size
+                if total_h <= effective_height:
+                    break
+                current_size -= 2
+            else:
+                ctx = self._resolve_context(current_size, weight, font_stack)
+                lines = self._wrap_lines(text, ctx, effective_width)
+
+            line_step = int(current_size * line_spacing)
+            kept: list[str] = []
+            for i, line in enumerate(lines):
+                if (i * line_step + current_size) <= effective_height:
+                    kept.append(line)
+                else:
+                    if kept:
+                        last = kept[-1]
+                        while last:
+                            candidate = last + "..."
+                            if self._measure_text(candidate, ctx) <= effective_width:
+                                kept[-1] = candidate
+                                break
+                            last = last[:-1]
+                        else:
+                            kept[-1] = "..."
+                    break
+
+            if not kept:
+                return (0, 0)
+            bw = int(max(self._measure_text(line, ctx) for line in kept))
+            bh = (len(kept) - 1) * line_step + current_size
+            return (bw, bh)
+
     # endregion
 
     # region Public rendering API
@@ -491,6 +590,7 @@ class FontManager:
         shadow_color: FillType | None = ...,
         shadow_offset: tuple[int, int] = ...,
         gradient_angle: float = ...,
+        anchor: Anchor = ...,
         font_stack: list[FontConfig] | None = ...,
         emoji_source: type[BaseSource] = ...,
     ) -> tuple[int, int]: ...
@@ -521,6 +621,7 @@ class FontManager:
         shadow_color: FillType | None = ...,
         shadow_offset: tuple[int, int] = ...,
         gradient_angle: float = ...,
+        anchor: Anchor = ...,
         font_stack: list[FontConfig] | None = ...,
         emoji_source: type[BaseSource] = ...,
     ) -> tuple[int, int]: ...
@@ -553,6 +654,7 @@ class FontManager:
         shadow_color: FillType | None = ...,
         shadow_offset: tuple[int, int] = ...,
         gradient_angle: float = ...,
+        anchor: Anchor = ...,
         font_stack: list[FontConfig] | None = ...,
         emoji_source: type[BaseSource] = ...,
     ) -> tuple[int, int]: ...
@@ -585,6 +687,7 @@ class FontManager:
         shadow_color: FillType | None = ...,
         shadow_offset: tuple[int, int] = ...,
         gradient_angle: float = ...,
+        anchor: Anchor = ...,
         font_stack: list[FontConfig] | None = ...,
         emoji_source: type[BaseSource] = ...,
     ) -> tuple[int, int]: ...
@@ -609,6 +712,7 @@ class FontManager:
         shadow_color: FillType | None = None,
         shadow_offset: tuple[int, int] = (2, 2),
         gradient_angle: float = _GRADIENT_ANGLE,
+        anchor: Anchor = "lt",
         font_stack: list[FontConfig] | None = None,
         emoji_source: type[BaseSource] = Twemoji,
     ) -> tuple[int, int]:
@@ -726,6 +830,16 @@ class FontManager:
             *shadow_color* is a gradient string. Defaults to ``15.0``.
         font_stack:
             Override the instance's :attr:`default_stack` for this call only.
+        anchor:
+            Two-character PIL-style anchor code specifying which point of the
+            text block is placed at *position*. The first character selects
+            the horizontal reference (``l`` = left edge, ``m`` = horizontal
+            center, ``r`` = right edge) and the second selects the vertical
+            reference (``t`` = top edge, ``m`` = vertical center,
+            ``b`` = bottom edge). Valid values are ``"lt"``, ``"mt"``,
+            ``"rt"``, ``"lm"``, ``"mm"``, ``"rm"``, ``"lb"``, ``"mb"``,
+            ``"rb"``. Defaults to ``"lt"`` (top-left), which preserves the
+            historical behavior where *position* was the top-left corner.
         emoji_source:
             Pilmoji emoji image source **class** (not instance). Defaults to
             :class:`~pilmoji.source.Twemoji`.
@@ -743,12 +857,19 @@ class FontManager:
             If *mode* is not ``"wrap"``, ``"scale"``, or ``"fit"``.
         ValueError
             If *align* is not ``"left"``, ``"center"``, or ``"right"``.
+        ValueError
+            If *anchor* is not one of the nine valid two-character codes.
         """
         if mode not in {"wrap", "scale", "fit"}:
             raise ValueError(f"mode must be 'wrap', 'scale', or 'fit', got {mode!r}.")
         if align not in {"left", "center", "right"}:
             raise ValueError(
                 f"align must be 'left', 'center', or 'right', got {align!r}."
+            )
+        _valid_anchors = {"lt", "mt", "rt", "lm", "mm", "rm", "lb", "mb", "rb"}
+        if anchor not in _valid_anchors:
+            raise ValueError(
+                f"anchor must be one of {sorted(_valid_anchors)!r}, got {anchor!r}."
             )
 
         if not text:
@@ -766,6 +887,27 @@ class FontManager:
         # (_measure_text, _segment_text) accept this context directly so that
         # _stack_hash / get_font_chain are never called more than once per size.
         ctx = self._resolve_context(size, weight, font_stack)
+
+        # Adjust position for the requested anchor point.
+        # _measure_block replicates the full layout logic without drawing;
+        # we call it only when the anchor is not the default top-left ("lt")
+        # so there is no overhead for the common case.
+        if anchor != "lt":
+            bw, bh = self._measure_block(
+                text,
+                ctx,
+                mode,
+                effective_width,
+                max_height,
+                min_size,
+                line_spacing,
+                weight,
+                font_stack,
+            )
+            h_char, v_char = anchor[0], anchor[1]
+            x_off = 0 if h_char == "l" else (-bw // 2 if h_char == "m" else -bw)
+            y_off = 0 if v_char == "t" else (-bh // 2 if v_char == "m" else -bh)
+            position = (position[0] + x_off, position[1] + y_off)
 
         # Determine whether fill is a gradient specification.
         gradient_stops: list[tuple[int, int, int]] | None = None

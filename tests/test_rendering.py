@@ -675,3 +675,67 @@ class TestGradientRendering:
 
 
 # endregion
+
+
+# region Anchor
+
+
+class TestDrawAnchor:
+    def _canvas(self, size: tuple[int, int] = (800, 400)) -> Image.Image:
+        return Image.new("RGBA", size, (0, 0, 0, 0))
+
+    def test_default_anchor_matches_lt(self, font_manager: FontManager) -> None:
+        """anchor="lt" must produce the same result as omitting anchor entirely."""
+        img_default = self._canvas()
+        img_lt = self._canvas()
+
+        font_manager.draw(img_default, "Hello", position=(50, 50), size=32)
+        font_manager.draw(img_lt, "Hello", position=(50, 50), size=32, anchor="lt")
+
+        assert img_default.tobytes() == img_lt.tobytes()
+
+    def test_center_anchor_shifts_position(self, font_manager: FontManager) -> None:
+        """anchor="mm" should shift the text so its center lands at position."""
+        cx, cy = 400, 200
+        img_center = self._canvas()
+        font_manager.draw(img_center, "Hello", position=(cx, cy), size=32, anchor="mm")
+
+        bbox = img_center.getbbox()
+        assert bbox is not None
+        rendered_cx = (bbox[0] + bbox[2]) // 2
+        rendered_cy = (bbox[1] + bbox[3]) // 2
+        # Allow ±5 px tolerance for sub-pixel rounding in font metrics.
+        assert abs(rendered_cx - cx) <= 5
+        assert abs(rendered_cy - cy) <= 5
+
+    def test_bottom_right_anchor(self, font_manager: FontManager) -> None:
+        """anchor="rb" should place the text so its bottom-right edge is at position."""
+        px, py = 600, 300
+        img = self._canvas()
+        w, h = font_manager.draw(img, "Hi", position=(px, py), size=32, anchor="rb")
+
+        # The rendered block should end at or near (px, py).
+        bbox = img.getbbox()
+        assert bbox is not None
+        assert abs(bbox[2] - px) <= 10  # right edge ≈ px
+        assert abs(bbox[3] - py) <= 10  # bottom edge ≈ py
+
+    def test_top_center_anchor(self, font_manager: FontManager) -> None:
+        """anchor="mt" centers horizontally but keeps the top at position."""
+        px, py = 400, 50
+        img = self._canvas()
+        font_manager.draw(img, "Hello", position=(px, py), size=32, anchor="mt")
+
+        bbox = img.getbbox()
+        assert bbox is not None
+        rendered_cx = (bbox[0] + bbox[2]) // 2
+        assert abs(rendered_cx - px) <= 5  # centered horizontally
+        assert abs(bbox[1] - py) <= 5  # top edge preserved
+
+    def test_invalid_anchor_raises(self, font_manager: FontManager) -> None:
+        img = self._canvas()
+        with pytest.raises(ValueError, match="anchor must be one of"):
+            font_manager.draw(img, "Hello", position=(0, 0), anchor="xx")  # type: ignore[arg-type]
+
+
+# endregion

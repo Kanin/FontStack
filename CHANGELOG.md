@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-05-03
+
+### Added
+
+- `anchor` parameter on `FontManager.draw()`. Accepts PIL-style two-character codes (`"lt"`, `"mm"`, `"rb"`, etc.) to specify which point of the rendered text block is placed at `position`. Default `"lt"` (top-left) is fully backward-compatible.
+- `Anchor` type alias (`Literal["lt", "mt", "rt", "lm", "mm", "rm", "lb", "mb", "rb"]`) exported from the top-level `fontstack` package.
+
 ## [0.3.0] - 2026-04-14
 
 ### Added
