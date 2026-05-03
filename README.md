@@ -25,6 +25,7 @@ Pillow's built-in text rendering uses a single font, so any character not covere
 - Two rendering modes: `"wrap"` breaks text across lines at a max width; `"scale"` shrinks the font to fit, truncating with `...` as a last resort.
 - **Fit mode** (`"fit"`) combines both: wraps at `max_width`, then shrinks the font until the block fits within `max_height`, then truncates the last visible line with `...` if necessary. `min_size` sets the floor for both scale and fit modes.
 - Left, center, and right alignment within the text block.
+- **Anchor points** (`anchor=`) on `FontManager.draw()`: choose which corner, edge midpoint, or centre of the text block lands at `position` using PIL-style two-character codes (`"lt"`, `"mm"`, `"rb"`, etc.).
 - LRU caching on both font objects and cmap data; repeated renders with the same stack/size/weight are essentially free.
 - Fully typed: `Literal` on `mode` and `align`, `@overload` signatures that surface `min_size` only when `mode="scale"` or `mode="fit"` and `max_height` only when `mode="fit"`, PEP 561 `py.typed` marker.
 
@@ -203,6 +204,32 @@ manager.draw(img, long_text, position=(0, 0), size=32,
                     mode="fit", max_width=400, max_height=120, min_size=10)
 ```
 
+### Anchor points
+
+`anchor` controls which point of the text block is placed at `position`.
+Useful for centering labels, pinning captions to corners, or aligning text
+to UI grid lines without manual offset math.
+
+```
+lt ── mt ── rt
+│           │
+lm    mm    rm
+│           │
+lb ── mb ── rb
+```
+
+```python
+# Centre text on a specific pixel (badge, map pin, etc.)
+manager.draw(img, "Hello", position=(400, 200), size=48, anchor="mm")
+
+# Bottom-right: text ends exactly at a corner
+manager.draw(img, "caption", position=(img.width - 16, img.height - 16),
+                    size=20, anchor="rb")
+
+# Top-center: heading centered at the top edge of a box
+manager.draw(img, "Title", position=(box_cx, box_top), size=32, anchor="mt")
+```
+
 ### Text effects
 
 ```python
@@ -293,6 +320,7 @@ Create with an explicit `default_stack` **or** a `font_dir` path (mutually exclu
 | `max_height` | `int \| None` | `None` | Maximum block height in pixels (`"fit"` mode only). |
 | `min_size` | `int` | `12` | Minimum font size for `"scale"` and `"fit"` modes. |
 | `align` | `"left" \| "center" \| "right"` | `"left"` | Horizontal alignment within the text block. |
+| `anchor` | `"lt"` … `"rb"` | `"lt"` | Which point of the text block lands at `position`. Two-char PIL-style code: horizontal (`l`/`m`/`r`) + vertical (`t`/`m`/`b`). |
 | `line_spacing` | `float` | `1.2` | Line-height multiplier (1.0 = tight, 1.5 = loose). |
 | `fill` | `FillType` | `"black"` | Text color: color name, RGB/RGBA tuple, palette integer, or gradient string. |
 | `stroke_width` | `int` | `0` | Outline thickness in pixels around each glyph. |

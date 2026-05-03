@@ -9,7 +9,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Literal, overload
 
-from PIL import Image, ImageChops, ImageColor, ImageFont
+from PIL import Image, ImageChops, ImageColor, ImageDraw, ImageFont
 from pilmoji import EMOJI_REGEX, Pilmoji
 from pilmoji.source import BaseSource, Twemoji
 
@@ -475,20 +475,31 @@ class FontManager:
         line_spacing: float,
         weight: int | str,
         font_stack: list[FontConfig] | None,
-    ) -> tuple[int, int]:
+    ) -> tuple[int, int, int, int]:
         """
-        Return the ``(width, height)`` of the text block without drawing.
+        Return the pixel-accurate visual bounding box ``(left, top, right,
+        bottom)`` of the text block, as offsets relative to the draw origin
+        ``(x_start, y_pos)`` that :meth:`draw` would use.
 
-        Mirrors the layout logic of :meth:`draw` for all three modes, but
-        skips every drawing operation.  *text* must already be BiDi-reordered.
-        The returned dimensions are the tightest bounding box around the
-        visible glyphs — i.e. the maximum line width and the total vertical
-        span — not the *effective_width* container.
+        Mirrors the layout logic of :meth:`draw` for all three modes to
+        determine which lines are rendered and at what font size, then renders
+        those lines onto a small temporary grayscale canvas and calls
+        :meth:`~PIL.Image.Image.getbbox` on the result to find the actual
+        pixel extent.  This approach captures FreeType hinting effects that
+        cause ``FreeTypeFont.getbbox`` to diverge from the true rendered
+        positions by a few pixels.
 
+        The same ``visual_top_offset`` (``getbbox("A")[1]``) Y-correction that
+        :meth:`draw` applies is used so that vertical bounds are relative to
+        the caller-supplied ``y_pos`` (not the internal FreeType draw origin).
+
+        *text* must already be BiDi-reordered before calling.
         Used by :meth:`draw` to compute anchor offsets before positioning.
         """
         size = ctx.size
 
+        # Phase 1 – replicate layout logic to determine which lines/text
+        # are actually rendered and at what size (identical to draw()).
         if mode == "scale":
             current_size = size
             while current_size > min_size:
@@ -510,15 +521,14 @@ class FontManager:
                         if self._measure_text("...", ctx) <= effective_width
                         else ""
                     )
-            bw = int(self._measure_text(display_text, ctx)) if display_text else 0
-            bh = ctx.size
-            return (bw, bh)
+            if not display_text:
+                return (0, 0, 0, 0)
+            render_lines = [display_text]
+            line_step = int(ctx.size * line_spacing)
 
         elif mode == "wrap":
-            lines = self._wrap_lines(text, ctx, effective_width)
-            bw = int(max(self._measure_text(line, ctx) for line in lines))
-            bh = (len(lines) - 1) * int(size * line_spacing) + size
-            return (bw, bh)
+            render_lines = self._wrap_lines(text, ctx, effective_width)
+            line_step = int(size * line_spacing)
 
         else:  # "fit"
             current_size = size
@@ -557,10 +567,41 @@ class FontManager:
                     break
 
             if not kept:
-                return (0, 0)
-            bw = int(max(self._measure_text(line, ctx) for line in kept))
-            bh = (len(kept) - 1) * line_step + current_size
-            return (bw, bh)
+                return (0, 0, 0, 0)
+            render_lines = kept
+
+        # Phase 2 – render to a tiny temp canvas and read actual pixel bounds.
+        #
+        # FreeType hinting can shift glyphs by a few pixels relative to the
+        # theoretical advance origin that FreeTypeFont.getbbox() reports.
+        # Rendering to a throw-away image and calling Image.getbbox() gives
+        # the true pixel positions and eliminates that discrepancy.
+        #
+        # We apply the same Y correction as _render_segments:
+        #   font_y = y_pos - vto   (vto = getbbox("A")[1])
+        # We use MARGIN >= vto so that font_y is always non-negative.
+        primary = ctx.chain[0]
+        vto = int(primary.getbbox("A")[1])
+        MARGIN = max(vto + 2, 8)
+
+        n = len(render_lines)
+        est_w = (
+            int(max(primary.getlength(ln) for ln in render_lines) * 1.1)
+            + MARGIN * 2
+            + 20
+        )
+        est_h = (n - 1) * line_step + ctx.size + MARGIN * 2 + 20
+
+        temp = Image.new("L", (max(est_w, 20), max(est_h, 20)), 0)
+        temp_draw = ImageDraw.Draw(temp)
+        for i, line in enumerate(render_lines):
+            y_pos = MARGIN + i * line_step
+            temp_draw.text((MARGIN, y_pos - vto), line, font=primary, fill=255)
+
+        bb = temp.getbbox()
+        if bb is None:
+            return (0, 0, 0, 0)
+        return (bb[0] - MARGIN, bb[1] - MARGIN, bb[2] - MARGIN, bb[3] - MARGIN)
 
     # endregion
 
@@ -592,7 +633,7 @@ class FontManager:
         gradient_angle: float = ...,
         anchor: Anchor = ...,
         font_stack: list[FontConfig] | None = ...,
-        emoji_source: type[BaseSource] = ...,
+        emoji_source: BaseSource | type[BaseSource] = ...,
     ) -> tuple[int, int]: ...
 
     # Overload 2/3 - ``mode="scale"``
@@ -623,7 +664,7 @@ class FontManager:
         gradient_angle: float = ...,
         anchor: Anchor = ...,
         font_stack: list[FontConfig] | None = ...,
-        emoji_source: type[BaseSource] = ...,
+        emoji_source: BaseSource | type[BaseSource] = ...,
     ) -> tuple[int, int]: ...
 
     # Overload 3/4 - ``mode="fit"``
@@ -656,7 +697,7 @@ class FontManager:
         gradient_angle: float = ...,
         anchor: Anchor = ...,
         font_stack: list[FontConfig] | None = ...,
-        emoji_source: type[BaseSource] = ...,
+        emoji_source: BaseSource | type[BaseSource] = ...,
     ) -> tuple[int, int]: ...
 
     # Overload 4/4 - generic ``RenderMode`` fallback
@@ -689,7 +730,7 @@ class FontManager:
         gradient_angle: float = ...,
         anchor: Anchor = ...,
         font_stack: list[FontConfig] | None = ...,
-        emoji_source: type[BaseSource] = ...,
+        emoji_source: BaseSource | type[BaseSource] = ...,
     ) -> tuple[int, int]: ...
 
     def draw(
@@ -714,7 +755,7 @@ class FontManager:
         gradient_angle: float = _GRADIENT_ANGLE,
         anchor: Anchor = "lt",
         font_stack: list[FontConfig] | None = None,
-        emoji_source: type[BaseSource] = Twemoji,
+        emoji_source: BaseSource | type[BaseSource] = Twemoji,
     ) -> tuple[int, int]:
         """
         Draw *text* onto *image* with automatic per-character font fallback,
@@ -841,8 +882,9 @@ class FontManager:
             ``"rb"``. Defaults to ``"lt"`` (top-left), which preserves the
             historical behavior where *position* was the top-left corner.
         emoji_source:
-            Pilmoji emoji image source **class** (not instance). Defaults to
-            :class:`~pilmoji.source.Twemoji`.
+            Pilmoji emoji source - either a :class:`~pilmoji.source.BaseSource`
+            subclass (e.g. ``Twemoji``) or an already-constructed instance.
+            Defaults to :class:`~pilmoji.source.Twemoji`.
 
         Returns
         -------
@@ -892,22 +934,31 @@ class FontManager:
         # _measure_block replicates the full layout logic without drawing;
         # we call it only when the anchor is not the default top-left ("lt")
         # so there is no overhead for the common case.
-        if anchor != "lt":
-            bw, bh = self._measure_block(
-                text,
-                ctx,
-                mode,
-                effective_width,
-                max_height,
-                min_size,
-                line_spacing,
-                weight,
-                font_stack,
-            )
-            h_char, v_char = anchor[0], anchor[1]
-            x_off = 0 if h_char == "l" else (-bw // 2 if h_char == "m" else -bw)
-            y_off = 0 if v_char == "t" else (-bh // 2 if v_char == "m" else -bh)
-            position = (position[0] + x_off, position[1] + y_off)
+        vis_l, vis_t, vis_r, vis_b = self._measure_block(
+            text,
+            ctx,
+            mode,
+            effective_width,
+            max_height,
+            min_size,
+            line_spacing,
+            weight,
+            font_stack,
+        )
+        h_char, v_char = anchor[0], anchor[1]
+        if h_char == "l":
+            x_off = -vis_l
+        elif h_char == "m":
+            x_off = -(vis_l + vis_r) // 2
+        else:  # "r"
+            x_off = -vis_r
+        if v_char == "t":
+            y_off = -vis_t
+        elif v_char == "m":
+            y_off = -(vis_t + vis_b) // 2
+        else:  # "b"
+            y_off = -vis_b
+        position = (position[0] + x_off, position[1] + y_off)
 
         # Determine whether fill is a gradient specification.
         gradient_stops: list[tuple[int, int, int]] | None = None

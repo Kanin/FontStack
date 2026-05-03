@@ -1,6 +1,6 @@
 """FontStack - Unicode text rendering with automatic per-character font fallback."""
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 from fontstack.discovery import scan_font_dir
 from fontstack.draw import draw_text

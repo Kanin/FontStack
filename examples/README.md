@@ -26,6 +26,7 @@ Each example is a standalone script that generates an `output.png`.
 | 16 | [Gradient fills, outlines, shadows](16_gradient/) | Dash-separated color stops and `"rainbow"` preset | ![](16_gradient/output.png) |
 | 17 | [Combined features](17_combined/) | Gradients + outlines + shadows + multi-script + weight | ![](17_combined/output.png) |
 | 18 | [Gradient angle](18_gradient_angle/) | `gradient_angle` on multi-line wrapped text | ![](18_gradient_angle/output.png) |
+| 19 | [Anchor points](19_anchor/) | All nine `anchor` values on `FontManager.draw()` | ![](19_anchor/output.png) |
 
 ---
 

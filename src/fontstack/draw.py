@@ -59,7 +59,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path | None = ...,
     manager: FontManager | None = ...,
 ) -> Image.Image: ...
@@ -86,7 +86,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path | None = ...,
     manager: FontManager | None = ...,
 ) -> Image.Image: ...
@@ -114,7 +114,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path | None = ...,
     manager: FontManager | None = ...,
 ) -> Image.Image: ...
@@ -143,7 +143,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path | None = ...,
     manager: FontManager | None = ...,
 ) -> Image.Image: ...
@@ -172,7 +172,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path | None = ...,
     manager: FontManager,
 ) -> Image.Image: ...
@@ -199,7 +199,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path | None = ...,
     manager: FontManager,
 ) -> Image.Image: ...
@@ -227,7 +227,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path | None = ...,
     manager: FontManager,
 ) -> Image.Image: ...
@@ -255,7 +255,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path | None = ...,
     manager: FontManager,
 ) -> Image.Image: ...
@@ -284,7 +284,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path,
     manager: FontManager | None = ...,
 ) -> Image.Image: ...
@@ -311,7 +311,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path,
     manager: FontManager | None = ...,
 ) -> Image.Image: ...
@@ -339,7 +339,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path,
     manager: FontManager | None = ...,
 ) -> Image.Image: ...
@@ -367,7 +367,7 @@ def draw_text(
     gradient_angle: float = ...,
     background: FillType = ...,
     padding: int = ...,
-    emoji_source: type[BaseSource] = ...,
+    emoji_source: BaseSource | type[BaseSource] = ...,
     font_dir: str | Path,
     manager: FontManager | None = ...,
 ) -> Image.Image: ...
@@ -393,7 +393,7 @@ def draw_text(
     gradient_angle: float = _GRADIENT_ANGLE,
     background: FillType = (0, 0, 0, 0),
     padding: int = 0,
-    emoji_source: type[BaseSource] = Twemoji,
+    emoji_source: BaseSource | type[BaseSource] = Twemoji,
     font_dir: str | Path | None = None,
     manager: FontManager | None = None,
 ) -> Image.Image:
@@ -483,8 +483,9 @@ def draw_text(
         result. Prevents glyphs from touching the image border. Defaults to
         ``0``.
     emoji_source:
-        Pilmoji emoji source class. Defaults to
-        :class:`~pilmoji.source.Twemoji`.
+        Pilmoji emoji source - either a :class:`~pilmoji.source.BaseSource`
+        subclass (e.g. ``Twemoji``) or an already-constructed instance.
+        Defaults to :class:`~pilmoji.source.Twemoji`.
     manager:
         An existing :class:`FontManager` instance to reuse. When provided,
         *font_stack* is ignored and no new manager is constructed. Useful for
