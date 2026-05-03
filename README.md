@@ -230,6 +230,14 @@ manager.draw(img, "caption", position=(img.width - 16, img.height - 16),
 manager.draw(img, "Title", position=(box_cx, box_top), size=32, anchor="mt")
 ```
 
+> **Typographic vertical centering:** The middle (`m`) vertical anchor centers
+> on the *cap height* of the text — the region from the visual top of capital
+> letters down to the baseline — rather than on the full rendered bounding box.
+> This means strings with descenders (`g`, `y`, `p`, …) and strings without
+> descenders share the same cap-top position when drawn at the same `y`,
+> producing visually consistent rows (e.g. leaderboard entries, stat lines).
+> Descenders hang below the center point as they do in traditional typography.
+
 ### Text effects
 
 ```python

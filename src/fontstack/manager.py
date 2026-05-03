@@ -519,11 +519,18 @@ class FontManager:
         line_spacing: float,
         weight: int | str,
         font_stack: list[FontConfig] | None,
-    ) -> tuple[int, int, int, int]:
+    ) -> tuple[int, int, int, int, int]:
         """
         Return the pixel-accurate visual bounding box ``(left, top, right,
-        bottom)`` of the text block, as offsets relative to the draw origin
-        ``(x_start, y_pos)`` that :meth:`draw` would use.
+        bottom)`` of the text block plus a typographic bottom offset, all as
+        offsets relative to the draw origin ``(x_start, y_pos)`` that
+        :meth:`draw` would use.
+
+        The fifth value, ``typo_b``, is the typographic bottom of the block:
+        ``(n_lines - 1) * line_step + cap_height``.  Unlike ``bottom``, it
+        excludes descenders so that strings with and without descending
+        characters produce the same vertical midpoint when using the ``"m"``
+        anchor.
 
         Mirrors the layout logic of :meth:`draw` for all three modes to
         determine which lines are rendered and at what font size, then renders
@@ -566,7 +573,7 @@ class FontManager:
                         else ""
                     )
             if not display_text:
-                return (0, 0, 0, 0)
+                return (0, 0, 0, 0, 0)
             render_lines = [display_text]
             line_step = int(ctx.size * line_spacing)
 
@@ -611,7 +618,7 @@ class FontManager:
                     break
 
             if not kept:
-                return (0, 0, 0, 0)
+                return (0, 0, 0, 0, 0)
             render_lines = kept
 
         # Phase 2 – render to a tiny temp canvas and read actual pixel bounds.
@@ -674,8 +681,10 @@ class FontManager:
 
         bb = temp.getbbox()
         if bb is None:
-            return (0, 0, 0, 0)
-        return (bb[0] - MARGIN, bb[1] - MARGIN, bb[2] - MARGIN, bb[3] - MARGIN)
+            return (0, 0, 0, 0, 0)
+        cap_h = primary_asc - vto
+        typo_b = (len(render_lines) - 1) * line_step + cap_h
+        return (bb[0] - MARGIN, bb[1] - MARGIN, bb[2] - MARGIN, bb[3] - MARGIN, typo_b)
 
     # endregion
 
@@ -1008,7 +1017,7 @@ class FontManager:
         # _measure_block replicates the full layout logic without drawing;
         # we call it only when the anchor is not the default top-left ("lt")
         # so there is no overhead for the common case.
-        vis_l, vis_t, vis_r, vis_b = self._measure_block(
+        vis_l, vis_t, vis_r, vis_b, vis_typo_b = self._measure_block(
             text,
             ctx,
             mode,
@@ -1029,7 +1038,7 @@ class FontManager:
         if v_char == "t":
             y_off = -vis_t
         elif v_char == "m":
-            y_off = -(vis_t + vis_b) // 2
+            y_off = -(vis_t + vis_typo_b) // 2
         else:  # "b"
             y_off = -vis_b
         position = (position[0] + x_off, position[1] + y_off)

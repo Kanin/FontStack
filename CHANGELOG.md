@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2026-05-03
+
+### Fixed
+
+- `anchor="*m"` (middle vertical: `lm`, `mm`, `rm`) now centers on the *cap height* of the text block rather than the full rendered bounding box. Previously, strings with descenders (`g`, `y`, `p`, etc.) had their capital letters positioned higher than strings without descenders at the same `y`, making mixed rows in leaderboards or stat cards look misaligned. `_measure_block` now also returns a typographic bottom offset (`typo_b = (n_lines − 1) × line_step + cap_height`) that excludes descenders; the vertical middle anchor uses `(vis_t + typo_b) // 2` as its centering reference instead of `(vis_t + vis_b) // 2`.
+
 ## [0.3.7] - 2026-05-03
 
 ### Fixed
